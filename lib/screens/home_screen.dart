@@ -1,10 +1,19 @@
 import 'package:flutter/material.dart';
 
+import '../data/recipe_data.dart';
 import '../theme/app_theme.dart';
 import 'chatbot_screen.dart';
+import 'recipe_detail_screen.dart';
 
-class HomeScreen extends StatelessWidget {
+class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
+
+  @override
+  State<HomeScreen> createState() => _HomeScreenState();
+}
+
+class _HomeScreenState extends State<HomeScreen> {
+  String? _activeCategoryId; // null = "Semua"
 
   @override
   Widget build(BuildContext context) {
@@ -15,14 +24,9 @@ class HomeScreen extends StatelessWidget {
       {'label': 'Camilan', 'icon': Icons.icecream_rounded},
     ];
 
-    const categories = ['Semua', 'Cepat dan Mudah', 'Vegan', 'Tanpa Gluten'];
-
-    const recipes = [
-      {'title': 'Nasi Goreng Spesial', 'subtitle': '20 menit \u00b7 Mudah'},
-      {'title': 'Ayam Teriyaki', 'subtitle': '35 menit \u00b7 Sedang'},
-      {'title': 'Sushi Roll', 'subtitle': '45 menit \u00b7 Sedang'},
-      {'title': 'Tumis Kangkung', 'subtitle': '15 menit \u00b7 Mudah'},
-    ];
+    final filteredRecipes = _activeCategoryId == null
+        ? dummyRecipes
+        : dummyRecipes.where((r) => r.categoryId == _activeCategoryId).toList();
 
     return ListView(
       padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
@@ -33,7 +37,6 @@ class HomeScreen extends StatelessWidget {
               width: 52,
               height: 52,
               decoration: const BoxDecoration(color: AppColors.orangeLight, shape: BoxShape.circle),
-              // TODO: ganti dengan foto profil pengguna, mis. Image.asset('assets/avatar.jpg')
               child: const Icon(Icons.person_rounded, color: AppColors.orange, size: 26),
             ),
             const SizedBox(width: 12),
@@ -59,8 +62,7 @@ class HomeScreen extends StatelessWidget {
           child: const Row(children: [
             Icon(Icons.search_rounded, size: 18, color: AppColors.orange),
             SizedBox(width: 8),
-            Text('Cari resep, bahan, atau makanan',
-                style: TextStyle(fontSize: 12.5, color: AppColors.muted)),
+            Text('Cari resep, bahan, atau makanan', style: TextStyle(fontSize: 12.5, color: AppColors.muted)),
           ]),
         ),
         const SizedBox(height: 22),
@@ -75,9 +77,7 @@ class HomeScreen extends StatelessWidget {
         ),
         const SizedBox(height: 18),
         _AssistantBanner(
-          onTap: () {
-            Navigator.of(context).push(MaterialPageRoute(builder: (_) => const ChatbotScreen()));
-          },
+          onTap: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const ChatbotScreen())),
         ),
         const SizedBox(height: 22),
         Text('Kategori',
@@ -85,39 +85,74 @@ class HomeScreen extends StatelessWidget {
         const SizedBox(height: 10),
         SizedBox(
           height: 34,
-          child: ListView.separated(
+          child: ListView(
             scrollDirection: Axis.horizontal,
-            itemCount: categories.length,
-            separatorBuilder: (_, __) => const SizedBox(width: 8),
-            itemBuilder: (context, i) {
-              final active = i == 0;
-              return Container(
-                padding: const EdgeInsets.symmetric(horizontal: 14),
-                alignment: Alignment.center,
-                decoration: BoxDecoration(
-                  color: active ? AppColors.orange : Colors.white,
-                  borderRadius: BorderRadius.circular(20),
-                  border: Border.all(color: active ? AppColors.orange : AppColors.line),
-                ),
-                child: Text(categories[i],
-                    style: TextStyle(fontSize: 12, color: active ? Colors.white : AppColors.ink)),
-              );
-            },
+            children: [
+              _CategoryChip(
+                label: 'Semua',
+                active: _activeCategoryId == null,
+                onTap: () => setState(() => _activeCategoryId = null),
+              ),
+              ...categories.map((c) => Padding(
+                    padding: const EdgeInsets.only(left: 8),
+                    child: _CategoryChip(
+                      label: c.name,
+                      active: _activeCategoryId == c.id,
+                      onTap: () => setState(() => _activeCategoryId = c.id),
+                    ),
+                  )),
+            ],
           ),
         ),
         const SizedBox(height: 16),
-        GridView.count(
-          crossAxisCount: 2,
-          shrinkWrap: true,
-          physics: const NeverScrollableScrollPhysics(),
-          mainAxisSpacing: 12,
-          crossAxisSpacing: 12,
-          childAspectRatio: 0.8,
-          children: recipes
-              .map((r) => _RecipeCard(title: r['title']!, subtitle: r['subtitle']!))
-              .toList(),
-        ),
+        if (filteredRecipes.isEmpty)
+          const Padding(
+            padding: EdgeInsets.symmetric(vertical: 12),
+            child: Text('Belum ada resep di kategori ini.', style: TextStyle(fontSize: 13, color: AppColors.muted)),
+          )
+        else
+          GridView.count(
+            crossAxisCount: 2,
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            mainAxisSpacing: 12,
+            crossAxisSpacing: 12,
+            childAspectRatio: 0.8,
+            children: filteredRecipes
+                .map((r) => _RecipeCard(
+                      title: r.title,
+                      subtitle: r.subtitle,
+                      onTap: () => Navigator.of(context)
+                          .push(MaterialPageRoute(builder: (_) => RecipeDetailScreen(recipe: r))),
+                    ))
+                .toList(),
+          ),
       ],
+    );
+  }
+}
+
+class _CategoryChip extends StatelessWidget {
+  const _CategoryChip({required this.label, required this.active, required this.onTap});
+  final String label;
+  final bool active;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(20),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 14),
+        alignment: Alignment.center,
+        decoration: BoxDecoration(
+          color: active ? AppColors.orange : Colors.white,
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(color: active ? AppColors.orange : AppColors.line),
+        ),
+        child: Text(label, style: TextStyle(fontSize: 12, color: active ? Colors.white : AppColors.ink)),
+      ),
     );
   }
 }
@@ -151,7 +186,7 @@ class _MealTypeAvatar extends StatelessWidget {
   }
 }
 
-/// Banner AI assistant, kini widget mandiri di atas grid resep (bukan kartu grid).
+/// Banner AI assistant, widget mandiri di atas grid resep (bukan kartu grid).
 class _AssistantBanner extends StatelessWidget {
   const _AssistantBanner({required this.onTap});
   final VoidCallback onTap;
@@ -189,59 +224,64 @@ class _AssistantBanner extends StatelessWidget {
 /// ganti Container di dalamnya dengan Image.asset(...) / Image.network(...)
 /// dan biarkan ClipRRect di luarnya supaya sudut tetap membulat.
 class _RecipeCard extends StatelessWidget {
-  const _RecipeCard({required this.title, required this.subtitle});
+  const _RecipeCard({required this.title, required this.subtitle, required this.onTap});
   final String title;
   final String subtitle;
+  final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppColors.line),
-      ),
-      clipBehavior: Clip.antiAlias,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Expanded(
-            child: Stack(
-              fit: StackFit.expand,
-              children: [
-                // --- image placeholder: ganti dengan Image.asset/Image.network ---
-                Container(
-                  color: AppColors.line,
-                  child: Icon(Icons.image_outlined, color: AppColors.muted, size: 28),
-                ),
-                Positioned(
-                  top: 8,
-                  left: 8,
-                  child: Container(
-                    width: 24,
-                    height: 24,
-                    decoration: const BoxDecoration(color: Colors.white, shape: BoxShape.circle),
-                    child: const Icon(Icons.thumb_up_rounded, size: 13, color: AppColors.orange),
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(16),
+      child: Container(
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: AppColors.line),
+        ),
+        clipBehavior: Clip.antiAlias,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Expanded(
+              child: Stack(
+                fit: StackFit.expand,
+                children: [
+                  // --- image placeholder: ganti dengan Image.asset/Image.network ---
+                  Container(
+                    color: AppColors.line,
+                    child: Icon(Icons.image_outlined, color: AppColors.muted, size: 28),
                   ),
-                ),
-              ],
+                  Positioned(
+                    top: 8,
+                    left: 8,
+                    child: Container(
+                      width: 24,
+                      height: 24,
+                      decoration: const BoxDecoration(color: Colors.white, shape: BoxShape.circle),
+                      child: const Icon(Icons.thumb_up_rounded, size: 13, color: AppColors.orange),
+                    ),
+                  ),
+                ],
+              ),
             ),
-          ),
-          Padding(
-            padding: const EdgeInsets.fromLTRB(10, 8, 10, 10),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(title,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: AppColors.ink)),
-                const SizedBox(height: 2),
-                Text(subtitle, style: const TextStyle(fontSize: 11, color: AppColors.muted)),
-              ],
+            Padding(
+              padding: const EdgeInsets.fromLTRB(10, 8, 10, 10),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(title,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: AppColors.ink)),
+                  const SizedBox(height: 2),
+                  Text(subtitle, style: const TextStyle(fontSize: 11, color: AppColors.muted)),
+                ],
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

@@ -2,13 +2,59 @@ import 'package:flutter/material.dart';
 
 import '../theme/app_theme.dart';
 
-class ProfileScreen extends StatelessWidget {
+class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    final preferences = ['Halal', 'Pedas sedang', 'Anggaran hemat', 'Masakan Nusantara'];
+  State<ProfileScreen> createState() => _ProfileScreenState();
+}
 
+class _ProfileScreenState extends State<ProfileScreen> {
+  final _nameController = TextEditingController(text: 'Jane Doe');
+  final _emailController = TextEditingController(text: 'JaneDoe@email.com');
+  final _budgetController = TextEditingController(text: '50000');
+
+  String _diet = 'Halal';
+  bool _spicy = true;
+  bool _saved = false;
+  String? _emailError;
+
+  static const diets = ['Halal', 'Vegetarian', 'Vegan', 'Tanpa pantangan'];
+
+  void _save() {
+    final email = _emailController.text.trim();
+    final validEmail = RegExp(r'^[\w.+-]+@[\w-]+\.[\w.-]+$').hasMatch(email);
+
+    if (_nameController.text.trim().isEmpty) {
+      setState(() {
+        _emailError = null;
+        _saved = false;
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Nama tidak boleh kosong.')),
+      );
+      return;
+    }
+
+    if (!validEmail) {
+      setState(() {
+        _emailError = 'Format email tidak valid.';
+        _saved = false;
+      });
+      return;
+    }
+
+    setState(() {
+      _emailError = null;
+      _saved = true;
+    });
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Preferensi berhasil disimpan.')),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
     return ListView(
       padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
       children: [
@@ -20,67 +66,93 @@ class ProfileScreen extends StatelessWidget {
             child: const Icon(Icons.person_rounded, color: AppColors.orange, size: 28),
           ),
           const SizedBox(width: 14),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text('Nasywa',
-                  style: Theme.of(context).textTheme.headlineMedium?.copyWith(fontSize: 18)),
-              const SizedBox(height: 2),
-              const Text('nasywa@email.com', style: TextStyle(fontSize: 12, color: AppColors.muted)),
-            ],
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text('Profil & Preferensi', style: Theme.of(context).textTheme.headlineMedium?.copyWith(fontSize: 18)),
+                const SizedBox(height: 2),
+                const Text('Data ini dipakai chatbot & filter resep', style: TextStyle(fontSize: 12, color: AppColors.muted)),
+              ],
+            ),
           ),
         ]),
         const SizedBox(height: 24),
-        const Text('Preferensi',
-            style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: AppColors.ink)),
-        const SizedBox(height: 8),
+
+        _FieldLabel('Nama'),
+        TextField(controller: _nameController, decoration: const InputDecoration()),
+        const SizedBox(height: 16),
+
+        _FieldLabel('Email'),
+        TextField(
+          controller: _emailController,
+          decoration: InputDecoration(errorText: _emailError),
+        ),
+        const SizedBox(height: 16),
+
+        _FieldLabel('Preferensi Diet'),
+        const SizedBox(height: 6),
         Wrap(
           spacing: 8,
           runSpacing: 8,
-          children: preferences
-              .map((p) => Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                    decoration:
-                        BoxDecoration(color: AppColors.greenLight, borderRadius: BorderRadius.circular(20)),
-                    child: Text(p,
-                        style: const TextStyle(
-                            fontSize: 12, color: AppColors.green, fontWeight: FontWeight.w600)),
-                  ))
-              .toList(),
+          children: diets.map((d) {
+            final active = d == _diet;
+            return ChoiceChip(
+              label: Text(d),
+              selected: active,
+              onSelected: (_) => setState(() => _diet = d),
+              selectedColor: AppColors.green,
+              backgroundColor: Colors.white,
+              labelStyle: TextStyle(fontSize: 12, color: active ? Colors.white : AppColors.ink),
+              side: BorderSide(color: active ? AppColors.green : AppColors.line),
+            );
+          }).toList(),
         ),
-        const SizedBox(height: 24),
-        const Text('Koleksi resep',
-            style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: AppColors.ink)),
-        const SizedBox(height: 8),
-        const _CollectionRow(label: 'Resep praktis kerja', count: 6),
-        const SizedBox(height: 8),
-        const _CollectionRow(label: 'Resep date night', count: 3),
+        const SizedBox(height: 16),
+
+        _FieldLabel('Anggaran belanja per hari (Rp)'),
+        TextField(
+          controller: _budgetController,
+          keyboardType: TextInputType.number,
+          decoration: const InputDecoration(),
+        ),
+        const SizedBox(height: 16),
+
+        SwitchListTile(
+          contentPadding: EdgeInsets.zero,
+          title: const Text('Suka masakan pedas', style: TextStyle(fontSize: 13, color: AppColors.ink)),
+          value: _spicy,
+          activeThumbColor: AppColors.orange,
+          onChanged: (v) => setState(() => _spicy = v),
+        ),
+        const SizedBox(height: 12),
+
+        SizedBox(
+          width: double.infinity,
+          child: ElevatedButton(onPressed: _save, child: const Text('Simpan Preferensi')),
+        ),
+        if (_saved) ...[
+          const SizedBox(height: 10),
+          const Row(children: [
+            Icon(Icons.check_circle_rounded, size: 16, color: AppColors.green),
+            SizedBox(width: 6),
+            Text('Tersimpan', style: TextStyle(fontSize: 12, color: AppColors.green)),
+          ]),
+        ],
       ],
     );
   }
 }
 
-class _CollectionRow extends StatelessWidget {
-  const _CollectionRow({required this.label, required this.count});
-
-  final String label;
-  final int count;
+class _FieldLabel extends StatelessWidget {
+  const _FieldLabel(this.text);
+  final String text;
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppColors.line),
-      ),
-      child: Row(children: [
-        const Icon(Icons.bookmark_rounded, size: 18, color: AppColors.orange),
-        const SizedBox(width: 10),
-        Expanded(child: Text(label, style: const TextStyle(fontSize: 13, color: AppColors.ink))),
-        Text('$count resep', style: const TextStyle(fontSize: 12, color: AppColors.muted)),
-      ]),
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 6),
+      child: Text(text, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: AppColors.ink)),
     );
   }
 }

@@ -33,7 +33,7 @@ class AppTheme {
         error: AppColors.red,
       ),
       textTheme: TextTheme(
-        // Judul besar pakai serif (Fraunces)
+        // Judul besar pakai serif (Fraunces) supaya terasa seperti buku resep.
         displayLarge: GoogleFonts.fraunces(
           fontSize: 30,
           fontWeight: FontWeight.w600,
@@ -45,7 +45,7 @@ class AppTheme {
           fontWeight: FontWeight.w600,
           color: AppColors.ink,
         ),
-        // Teks UI pakai sans-serif (Inter)
+        // Teks UI pakai sans-serif (Inter) supaya tetap fungsional dan mudah dibaca.
         bodyLarge: GoogleFonts.inter(
           fontSize: 15,
           fontWeight: FontWeight.w400,
@@ -87,6 +87,28 @@ class AppTheme {
             fontWeight: FontWeight.w600,
           ),
         ),
+      ),
+      inputDecorationTheme: InputDecorationTheme(
+        filled: true,
+        fillColor: Colors.white,
+        contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: const BorderSide(color: AppColors.line),
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: const BorderSide(color: AppColors.line),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: const BorderSide(color: AppColors.orange, width: 1.4),
+        ),
+        errorBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: const BorderSide(color: AppColors.red),
+        ),
+        labelStyle: GoogleFonts.inter(fontSize: 13, color: AppColors.muted),
       ),
     );
   }
