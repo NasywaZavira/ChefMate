@@ -16,19 +16,21 @@ class MainShell extends StatefulWidget {
 class _MainShellState extends State<MainShell> {
   int _index = 0;
 
-  final _screens = const [
-    HomeScreen(),
-    CalendarScreen(),
-    ShoppingListScreen(),
-    ProfileScreen(),
-  ];
+  void _goToCalendar() => setState(() => _index = 1);
 
   @override
   Widget build(BuildContext context) {
+    final screens = [
+      HomeScreen(onNavigateToCalendar: _goToCalendar),
+      const CalendarScreen(),
+      const ShoppingListScreen(),
+      const ProfileScreen(),
+    ];
+
     return Scaffold(
       backgroundColor: AppColors.cream,
       body: SafeArea(
-        child: IndexedStack(index: _index, children: _screens),
+        child: IndexedStack(index: _index, children: screens),
       ),
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: _index,

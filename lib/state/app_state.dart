@@ -1,6 +1,6 @@
 import 'package:flutter/foundation.dart';
 
-import '../data/recipe_data.dart';
+
 import '../models/meal_plan_entry.dart';
 import '../models/shopping_item.dart';
 
@@ -21,6 +21,57 @@ class AppState extends ChangeNotifier {
   List<ShoppingItem> get shoppingItems => List.unmodifiable(_shoppingItems);
 
   String _nextId(String prefix) => '$prefix-${_idCounter++}';
+
+  String userName = 'Jane Doe';
+  String userEmail = 'JaneDoe@email.com';
+  String dietPreference = 'Halal';
+  String dailyBudget = '50000';
+  bool likesSpicy = true;
+
+  void updateProfile({
+    required String name,
+    required String email,
+    required String diet,
+    required String budget,
+    required bool spicy,
+  }) {
+    userName = name;
+    userEmail = email;
+    dietPreference = diet;
+    dailyBudget = budget;
+    likesSpicy = spicy;
+    notifyListeners();
+  }
+
+  //  Pengaturan notifikasi 
+
+  bool notifyReminder = true;
+  bool notifyPromo = false;
+
+  void setNotifyReminder(bool value) {
+    notifyReminder = value;
+    notifyListeners();
+  }
+
+  void setNotifyPromo(bool value) {
+    notifyPromo = value;
+    notifyListeners();
+  }
+
+  //  Resep favorit (bookmark), relasi Set<recipeId> 
+
+  final Set<String> _bookmarkedRecipeIds = {};
+
+  bool isBookmarked(String recipeId) => _bookmarkedRecipeIds.contains(recipeId);
+
+  void toggleBookmark(String recipeId) {
+    if (_bookmarkedRecipeIds.contains(recipeId)) {
+      _bookmarkedRecipeIds.remove(recipeId);
+    } else {
+      _bookmarkedRecipeIds.add(recipeId);
+    }
+    notifyListeners();
+  }
 
   //  Meal Plan CRUD (relasi ID ke Recipe lewat recipeId) 
 
@@ -113,6 +164,5 @@ class AppState extends ChangeNotifier {
   }
 }
 
-/// Satu instance dipakai bersama di seluruh aplikasi (simple app-wide state,
-/// tidak perlu tambahan package seperti provider/riverpod).
+
 final appState = AppState();

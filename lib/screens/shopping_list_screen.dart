@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import '../models/shopping_item.dart';
 import '../state/app_state.dart';
@@ -67,6 +68,26 @@ class _ShoppingListScreenState extends State<ShoppingListScreen> {
     setState(() {});
   }
 
+  Future<void> _shareList() async {
+    final items = appState.shoppingItems;
+    if (items.isEmpty) {
+      ScaffoldMessenger.of(context)
+          .showSnackBar(const SnackBar(content: Text('Daftar belanja masih kosong.')));
+      return;
+    }
+
+    final buffer = StringBuffer('Daftar Belanja ChefMate\n');
+    for (final item in items) {
+      buffer.writeln('${item.checked ? '[x]' : '[ ]'} ${item.name} - ${item.amount}');
+    }
+
+    await Clipboard.setData(ClipboardData(text: buffer.toString()));
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Daftar belanja disalin, siap dibagikan.')),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final items = appState.shoppingItems;
@@ -82,7 +103,14 @@ class _ShoppingListScreenState extends State<ShoppingListScreen> {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text('Daftar belanja', style: Theme.of(context).textTheme.displayLarge?.copyWith(fontSize: 22)),
-              const Icon(Icons.ios_share_rounded, size: 20, color: AppColors.muted),
+              InkWell(
+                onTap: _shareList,
+                borderRadius: BorderRadius.circular(20),
+                child: const Padding(
+                  padding: EdgeInsets.all(4),
+                  child: Icon(Icons.ios_share_rounded, size: 20, color: AppColors.muted),
+                ),
+              ),
             ],
           ),
           const SizedBox(height: 16),

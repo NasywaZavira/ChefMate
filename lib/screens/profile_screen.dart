@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../state/app_state.dart';
 import '../theme/app_theme.dart';
 import 'settings_screen.dart';
 
@@ -11,13 +12,14 @@ class ProfileScreen extends StatefulWidget {
 }
 
 class _ProfileScreenState extends State<ProfileScreen> {
-  final _nameController = TextEditingController(text: 'Jane Doe');
-  final _emailController = TextEditingController(text: 'JaneDoe@email.com');
-  final _budgetController = TextEditingController(text: '50000');
+  late final _nameController = TextEditingController(text: appState.userName);
+  late final _emailController = TextEditingController(text: appState.userEmail);
+  late final _budgetController = TextEditingController(text: appState.dailyBudget);
 
-  String _diet = 'Halal';
-  bool _spicy = true;
+  late String _diet = appState.dietPreference;
+  late bool _spicy = appState.likesSpicy;
   bool _saved = false;
+  String? _nameError;
   String? _emailError;
 
   static const diets = ['Halal', 'Vegetarian', 'Vegan', 'Tanpa pantangan'];
@@ -28,24 +30,32 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
     if (_nameController.text.trim().isEmpty) {
       setState(() {
+        _nameError = 'Nama tidak boleh kosong.';
         _emailError = null;
         _saved = false;
       });
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('Nama tidak boleh kosong.')));
       return;
     }
 
     if (!validEmail) {
       setState(() {
+        _nameError = null;
         _emailError = 'Format email tidak valid.';
         _saved = false;
       });
       return;
     }
 
+    appState.updateProfile(
+      name: _nameController.text.trim(),
+      email: email,
+      diet: _diet,
+      budget: _budgetController.text.trim(),
+      spicy: _spicy,
+    );
+
     setState(() {
+      _nameError = null;
       _emailError = null;
       _saved = true;
     });
@@ -101,7 +111,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
           _FieldLabel('Nama'),
           TextField(
             controller: _nameController,
-            decoration: const InputDecoration(),
+            decoration: InputDecoration(errorText: _nameError),
           ),
           const SizedBox(height: 16),
 

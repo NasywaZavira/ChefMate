@@ -1,9 +1,57 @@
 import 'package:flutter/material.dart';
 
+import '../state/app_state.dart';
 import '../theme/app_theme.dart';
+import 'landing_page.dart';
+import 'profile_screen.dart';
 
-class SettingsScreen extends StatelessWidget {
+class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
+
+  @override
+  State<SettingsScreen> createState() => _SettingsScreenState();
+}
+
+class _SettingsScreenState extends State<SettingsScreen> {
+  void _showInfoDialog(String title, String message) {
+    showDialog<void>(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: AppColors.cream,
+        title: Text(title),
+        content: Text(message, style: const TextStyle(fontSize: 13, color: AppColors.ink)),
+        actions: [
+          TextButton(onPressed: () => Navigator.of(context).pop(), child: const Text('Tutup')),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _confirmLogout() async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: AppColors.cream,
+        title: const Text('Keluar'),
+        content: const Text('Yakin ingin keluar dari akun ini?',
+            style: TextStyle(fontSize: 13, color: AppColors.ink)),
+        actions: [
+          TextButton(onPressed: () => Navigator.of(context).pop(false), child: const Text('Batal')),
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            child: const Text('Keluar', style: TextStyle(color: AppColors.red)),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed == true && mounted) {
+      Navigator.of(context).pushAndRemoveUntil(
+        MaterialPageRoute(builder: (_) => const LandingPage()),
+        (route) => false,
+      );
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -15,67 +63,79 @@ class SettingsScreen extends StatelessWidget {
         elevation: 0,
         title: const Text('Pengaturan'),
       ),
-      body: ListView(
-        padding: const EdgeInsets.fromLTRB(20, 12, 20, 24),
-        children: [
-          _SectionTitle('Akun'),
-          _SettingsTile(
-            icon: Icons.person_outline_rounded,
-            title: 'Profil Saya',
-            subtitle: 'Kelola nama, email, dan preferensi',
-            onTap: () {},
-          ),
-          _SettingsTile(
-            icon: Icons.lock_outline_rounded,
-            title: 'Keamanan',
-            subtitle: 'Atur kata sandi dan privasi',
-            onTap: () {},
-          ),
-          const SizedBox(height: 18),
-          _SectionTitle('Notifikasi'),
-          SwitchListTile(
-            contentPadding: EdgeInsets.zero,
-            title: const Text(
-              'Pengingat resep',
-              style: TextStyle(fontSize: 14, color: AppColors.ink),
+      body: AnimatedBuilder(
+        animation: appState,
+        builder: (context, _) => ListView(
+          padding: const EdgeInsets.fromLTRB(20, 12, 20, 24),
+          children: [
+            _SectionTitle('Akun'),
+            _SettingsTile(
+              icon: Icons.person_outline_rounded,
+              title: 'Profil Saya',
+              subtitle: 'Kelola nama, email, dan preferensi',
+              onTap: () => Navigator.of(context)
+                  .push(MaterialPageRoute(builder: (_) => const ProfileScreen())),
             ),
-            subtitle: const Text(
-              'Dapatkan reminder harian',
-              style: TextStyle(fontSize: 12, color: AppColors.muted),
+            _SettingsTile(
+              icon: Icons.lock_outline_rounded,
+              title: 'Keamanan',
+              subtitle: 'Atur kata sandi dan privasi',
+              onTap: () => _showInfoDialog(
+                'Keamanan',
+                'Pengaturan kata sandi dan privasi belum tersedia di versi ini.',
+              ),
             ),
-            value: true,
-            activeColor: AppColors.orange,
-            onChanged: (_) {},
-          ),
-          SwitchListTile(
-            contentPadding: EdgeInsets.zero,
-            title: const Text(
-              'Promo dan update',
-              style: TextStyle(fontSize: 14, color: AppColors.ink),
+            const SizedBox(height: 18),
+            _SectionTitle('Notifikasi'),
+            SwitchListTile(
+              contentPadding: EdgeInsets.zero,
+              title: const Text(
+                'Pengingat resep',
+                style: TextStyle(fontSize: 14, color: AppColors.ink),
+              ),
+              subtitle: const Text(
+                'Dapatkan reminder harian',
+                style: TextStyle(fontSize: 12, color: AppColors.muted),
+              ),
+              value: appState.notifyReminder,
+              activeThumbColor: AppColors.orange,
+              onChanged: (v) => appState.setNotifyReminder(v),
             ),
-            subtitle: const Text(
-              'Info produk terbaru',
-              style: TextStyle(fontSize: 12, color: AppColors.muted),
+            SwitchListTile(
+              contentPadding: EdgeInsets.zero,
+              title: const Text(
+                'Promo dan update',
+                style: TextStyle(fontSize: 14, color: AppColors.ink),
+              ),
+              subtitle: const Text(
+                'Info produk terbaru',
+                style: TextStyle(fontSize: 12, color: AppColors.muted),
+              ),
+              value: appState.notifyPromo,
+              activeThumbColor: AppColors.orange,
+              onChanged: (v) => appState.setNotifyPromo(v),
             ),
-            value: false,
-            activeColor: AppColors.orange,
-            onChanged: (_) {},
-          ),
-          const SizedBox(height: 18),
-          _SectionTitle('Lainnya'),
-          _SettingsTile(
-            icon: Icons.help_outline_rounded,
-            title: 'Bantuan',
-            subtitle: 'Panduan penggunaan app',
-            onTap: () {},
-          ),
-          _SettingsTile(
-            icon: Icons.logout_rounded,
-            title: 'Keluar',
-            subtitle: 'Logout dari akun saat ini',
-            onTap: () {},
-          ),
-        ],
+            const SizedBox(height: 18),
+            _SectionTitle('Lainnya'),
+            _SettingsTile(
+              icon: Icons.help_outline_rounded,
+              title: 'Bantuan',
+              subtitle: 'Panduan penggunaan app',
+              onTap: () => _showInfoDialog(
+                'Bantuan',
+                'Jelajahi resep di Beranda, susun rencana makan di Kalender, '
+                    'lalu kelola bahan yang perlu dibeli di Daftar Belanja. '
+                    'Bingung soal bahan? Tanya ChefMate AI Assistant.',
+              ),
+            ),
+            _SettingsTile(
+              icon: Icons.logout_rounded,
+              title: 'Keluar',
+              subtitle: 'Logout dari akun saat ini',
+              onTap: _confirmLogout,
+            ),
+          ],
+        ),
       ),
     );
   }

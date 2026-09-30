@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../models/recipe.dart';
+import '../state/app_state.dart';
 import '../theme/app_theme.dart';
 import 'chatbot_screen.dart';
 
@@ -43,10 +44,30 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
                   onTap: () => Navigator.of(context).pop(),
                 ),
               ),
-              const Positioned(
+              Positioned(
                 top: 44,
                 right: 16,
-                child: _RoundIconButton(icon: Icons.bookmark_border_rounded),
+                child: AnimatedBuilder(
+                  animation: appState,
+                  builder: (context, _) {
+                    final saved = appState.isBookmarked(recipe.id);
+                    return _RoundIconButton(
+                      icon: saved ? Icons.bookmark_rounded : Icons.bookmark_border_rounded,
+                      iconColor: saved ? AppColors.orange : AppColors.ink,
+                      onTap: () {
+                        appState.toggleBookmark(recipe.id);
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text(saved
+                                ? 'Dihapus dari resep favorit.'
+                                : 'Disimpan ke resep favorit.'),
+                            duration: const Duration(seconds: 1),
+                          ),
+                        );
+                      },
+                    );
+                  },
+                ),
               ),
             ],
           ),
@@ -241,10 +262,11 @@ class _InfoChip extends StatelessWidget {
 }
 
 class _RoundIconButton extends StatelessWidget {
-  const _RoundIconButton({required this.icon, this.onTap});
+  const _RoundIconButton({required this.icon, this.onTap, this.iconColor});
 
   final IconData icon;
   final VoidCallback? onTap;
+  final Color? iconColor;
 
   @override
   Widget build(BuildContext context) {
@@ -255,7 +277,7 @@ class _RoundIconButton extends StatelessWidget {
         width: 36,
         height: 36,
         decoration: const BoxDecoration(color: Colors.white, shape: BoxShape.circle),
-        child: Icon(icon, size: 18, color: AppColors.ink),
+        child: Icon(icon, size: 18, color: iconColor ?? AppColors.ink),
       ),
     );
   }

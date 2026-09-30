@@ -1,12 +1,17 @@
 import 'package:flutter/material.dart';
 
 import '../data/recipe_data.dart';
+import '../state/app_state.dart';
 import '../theme/app_theme.dart';
 import 'chatbot_screen.dart';
 import 'recipe_detail_screen.dart';
 
 class HomeScreen extends StatefulWidget {
-  const HomeScreen({super.key});
+  const HomeScreen({super.key, this.onNavigateToCalendar});
+
+  /// Dipanggil saat avatar jenis makan (Sarapan/Siang/Malam/Camilan) ditekan,
+  /// supaya MainShell bisa pindah tab ke Kalender.
+  final VoidCallback? onNavigateToCalendar;
 
   @override
   State<HomeScreen> createState() => _HomeScreenState();
@@ -14,6 +19,14 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   String? _activeCategoryId; // null = "Semua"
+  final _searchController = TextEditingController();
+  String _query = '';
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -24,9 +37,19 @@ class _HomeScreenState extends State<HomeScreen> {
       {'label': 'Camilan', 'icon': Icons.icecream_rounded},
     ];
 
-    final filteredRecipes = _activeCategoryId == null
+    final byCategory = _activeCategoryId == null
         ? dummyRecipes
         : dummyRecipes.where((r) => r.categoryId == _activeCategoryId).toList();
+
+    final query = _query.trim().toLowerCase();
+    final filteredRecipes = query.isEmpty
+        ? byCategory
+        : byCategory.where((r) {
+            final inTitle = r.title.toLowerCase().contains(query);
+            final inIngredients =
+                r.ingredients.any((ing) => ing.name.toLowerCase().contains(query));
+            return inTitle || inIngredients;
+          }).toList();
 
     return ListView(
       padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
@@ -45,11 +68,14 @@ class _HomeScreenState extends State<HomeScreen> {
               children: [
                 const Text('Hallo,',
                     style: TextStyle(fontSize: 13, color: AppColors.orange, fontWeight: FontWeight.w600)),
-                Text('Jane Doe',
-                    style: Theme.of(context)
-                        .textTheme
-                        .headlineMedium
-                        ?.copyWith(fontSize: 17, color: AppColors.orange)),
+                AnimatedBuilder(
+                  animation: appState,
+                  builder: (context, _) => Text(appState.userName,
+                      style: Theme.of(context)
+                          .textTheme
+                          .headlineMedium
+                          ?.copyWith(fontSize: 17, color: AppColors.orange)),
+                ),
               ],
             ),
           ],
@@ -59,10 +85,30 @@ class _HomeScreenState extends State<HomeScreen> {
           height: 46,
           padding: const EdgeInsets.symmetric(horizontal: 14),
           decoration: BoxDecoration(color: AppColors.orangeLight, borderRadius: BorderRadius.circular(14)),
-          child: const Row(children: [
-            Icon(Icons.search_rounded, size: 18, color: AppColors.orange),
-            SizedBox(width: 8),
-            Text('Cari resep, bahan, atau makanan', style: TextStyle(fontSize: 12.5, color: AppColors.muted)),
+          child: Row(children: [
+            const Icon(Icons.search_rounded, size: 18, color: AppColors.orange),
+            const SizedBox(width: 8),
+            Expanded(
+              child: TextField(
+                controller: _searchController,
+                onChanged: (v) => setState(() => _query = v),
+                style: const TextStyle(fontSize: 12.5, color: AppColors.ink),
+                decoration: const InputDecoration(
+                  isDense: true,
+                  border: InputBorder.none,
+                  hintText: 'Cari resep, bahan, atau makanan',
+                  hintStyle: TextStyle(fontSize: 12.5, color: AppColors.muted),
+                ),
+              ),
+            ),
+            if (_query.isNotEmpty)
+              InkWell(
+                onTap: () => setState(() {
+                  _searchController.clear();
+                  _query = '';
+                }),
+                child: const Icon(Icons.close_rounded, size: 16, color: AppColors.muted),
+              ),
           ]),
         ),
         const SizedBox(height: 22),
@@ -72,7 +118,11 @@ class _HomeScreenState extends State<HomeScreen> {
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: mealTypes
-              .map((m) => _MealTypeAvatar(label: m['label'] as String, icon: m['icon'] as IconData))
+              .map((m) => _MealTypeAvatar(
+                    label: m['label'] as String,
+                    icon: m['icon'] as IconData,
+                    onTap: widget.onNavigateToCalendar,
+                  ))
               .toList(),
         ),
         const SizedBox(height: 18),
@@ -161,27 +211,32 @@ class _CategoryChip extends StatelessWidget {
 /// Ganti isi Container dengan `Image.asset(...)` atau `Image.network(...)`
 /// begitu ada aset foto, lalu bungkus dengan ClipOval seperti biasa.
 class _MealTypeAvatar extends StatelessWidget {
-  const _MealTypeAvatar({required this.label, required this.icon});
+  const _MealTypeAvatar({required this.label, required this.icon, this.onTap});
   final String label;
   final IconData icon;
+  final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      children: [
-        Container(
-          width: 56,
-          height: 56,
-          decoration: BoxDecoration(
-            color: AppColors.line,
-            shape: BoxShape.circle,
-            border: Border.all(color: AppColors.orangeLight, width: 2),
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(28),
+      child: Column(
+        children: [
+          Container(
+            width: 56,
+            height: 56,
+            decoration: BoxDecoration(
+              color: AppColors.line,
+              shape: BoxShape.circle,
+              border: Border.all(color: AppColors.orangeLight, width: 2),
+            ),
+            child: Icon(Icons.image_outlined, color: AppColors.muted, size: 20),
           ),
-          child: Icon(Icons.image_outlined, color: AppColors.muted, size: 20),
-        ),
-        const SizedBox(height: 6),
-        Text(label, style: const TextStyle(fontSize: 10.5, color: AppColors.ink)),
-      ],
+          const SizedBox(height: 6),
+          Text(label, style: const TextStyle(fontSize: 10.5, color: AppColors.ink)),
+        ],
+      ),
     );
   }
 }
