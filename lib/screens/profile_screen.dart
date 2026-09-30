@@ -80,10 +80,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   color: AppColors.orangeLight,
                   shape: BoxShape.circle,
                 ),
-                child: const Icon(
-                  Icons.person_rounded,
-                  color: AppColors.orange,
-                  size: 28,
+                child: ClipOval(
+                  child: Image.asset('assets/images/profile.jpg', fit: BoxFit.cover),
                 ),
               ),
               const SizedBox(width: 14),

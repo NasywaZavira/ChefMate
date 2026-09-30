@@ -6,6 +6,24 @@ import '../theme/app_theme.dart';
 import 'chatbot_screen.dart';
 import 'recipe_detail_screen.dart';
 
+/// Kalau nama file foto tidak sama dengan judul resep, tulis di sini.
+/// Format: 'judul_resep_huruf_kecil_pakai_underscore': 'nama_file_tanpa_.jpg'
+/// Contoh: judul "Tumis Kangkung" -> file "tumis_kankung.jpg".
+const Map<String, String> _imageAliases = {
+  'tumis_kangkung': 'tumis_kankung',
+};
+
+/// Membuat path foto otomatis dari judul resep.
+/// "Nasi Goreng Spesial" -> assets/images/nasi_goreng_spesial.jpg
+String _recipeImagePath(String title) {
+  final slug = title
+      .toLowerCase()
+      .replaceAll(RegExp(r'[^a-z0-9]+'), '_')
+      .replaceAll(RegExp(r'^_+|_+$'), '');
+  final file = _imageAliases[slug] ?? slug;
+  return 'assets/images/$file.jpg';
+}
+
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key, this.onNavigateToCalendar});
 
@@ -31,10 +49,10 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   Widget build(BuildContext context) {
     const mealTypes = [
-      {'label': 'Sarapan', 'icon': Icons.egg_alt_rounded},
-      {'label': 'Makan Siang', 'icon': Icons.ramen_dining_rounded},
-      {'label': 'Makan Malam', 'icon': Icons.dinner_dining_rounded},
-      {'label': 'Camilan', 'icon': Icons.icecream_rounded},
+      {'label': 'Sarapan', 'icon': Icons.egg_alt_rounded, 'image': 'assets/images/breakfast.jpg'},
+      {'label': 'Makan Siang', 'icon': Icons.ramen_dining_rounded, 'image': 'assets/images/lunch.jpg'},
+      {'label': 'Makan Malam', 'icon': Icons.dinner_dining_rounded, 'image': 'assets/images/dinner.jpg'},
+      {'label': 'Camilan', 'icon': Icons.icecream_rounded, 'image': 'assets/images/cemilan.jpg'},
     ];
 
     final byCategory = _activeCategoryId == null
@@ -45,11 +63,11 @@ class _HomeScreenState extends State<HomeScreen> {
     final filteredRecipes = query.isEmpty
         ? byCategory
         : byCategory.where((r) {
-            final inTitle = r.title.toLowerCase().contains(query);
-            final inIngredients =
-                r.ingredients.any((ing) => ing.name.toLowerCase().contains(query));
-            return inTitle || inIngredients;
-          }).toList();
+      final inTitle = r.title.toLowerCase().contains(query);
+      final inIngredients =
+      r.ingredients.any((ing) => ing.name.toLowerCase().contains(query));
+      return inTitle || inIngredients;
+    }).toList();
 
     return ListView(
       padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
@@ -60,7 +78,9 @@ class _HomeScreenState extends State<HomeScreen> {
               width: 52,
               height: 52,
               decoration: const BoxDecoration(color: AppColors.orangeLight, shape: BoxShape.circle),
-              child: const Icon(Icons.person_rounded, color: AppColors.orange, size: 26),
+              child: ClipOval(
+                child: Image.asset('assets/images/profile.jpg', fit: BoxFit.cover),
+              ),
             ),
             const SizedBox(width: 12),
             Column(
@@ -119,10 +139,11 @@ class _HomeScreenState extends State<HomeScreen> {
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: mealTypes
               .map((m) => _MealTypeAvatar(
-                    label: m['label'] as String,
-                    icon: m['icon'] as IconData,
-                    onTap: widget.onNavigateToCalendar,
-                  ))
+            label: m['label'] as String,
+            icon: m['icon'] as IconData,
+            image: m['image'] as String,
+            onTap: widget.onNavigateToCalendar,
+          ))
               .toList(),
         ),
         const SizedBox(height: 18),
@@ -144,13 +165,13 @@ class _HomeScreenState extends State<HomeScreen> {
                 onTap: () => setState(() => _activeCategoryId = null),
               ),
               ...categories.map((c) => Padding(
-                    padding: const EdgeInsets.only(left: 8),
-                    child: _CategoryChip(
-                      label: c.name,
-                      active: _activeCategoryId == c.id,
-                      onTap: () => setState(() => _activeCategoryId = c.id),
-                    ),
-                  )),
+                padding: const EdgeInsets.only(left: 8),
+                child: _CategoryChip(
+                  label: c.name,
+                  active: _activeCategoryId == c.id,
+                  onTap: () => setState(() => _activeCategoryId = c.id),
+                ),
+              )),
             ],
           ),
         ),
@@ -170,11 +191,12 @@ class _HomeScreenState extends State<HomeScreen> {
             childAspectRatio: 0.8,
             children: filteredRecipes
                 .map((r) => _RecipeCard(
-                      title: r.title,
-                      subtitle: r.subtitle,
-                      onTap: () => Navigator.of(context)
-                          .push(MaterialPageRoute(builder: (_) => RecipeDetailScreen(recipe: r))),
-                    ))
+              title: r.title,
+              subtitle: r.subtitle,
+              image: _recipeImagePath(r.title),
+              onTap: () => Navigator.of(context)
+                  .push(MaterialPageRoute(builder: (_) => RecipeDetailScreen(recipe: r))),
+            ))
                 .toList(),
           ),
       ],
@@ -207,13 +229,12 @@ class _CategoryChip extends StatelessWidget {
   }
 }
 
-/// Placeholder foto bulat untuk tiap jenis makan.
-/// Ganti isi Container dengan `Image.asset(...)` atau `Image.network(...)`
-/// begitu ada aset foto, lalu bungkus dengan ClipOval seperti biasa.
+/// Foto bulat untuk tiap jenis makan.
 class _MealTypeAvatar extends StatelessWidget {
-  const _MealTypeAvatar({required this.label, required this.icon, this.onTap});
+  const _MealTypeAvatar({required this.label, required this.icon, required this.image, this.onTap});
   final String label;
   final IconData icon;
+  final String image;
   final VoidCallback? onTap;
 
   @override
@@ -231,7 +252,9 @@ class _MealTypeAvatar extends StatelessWidget {
               shape: BoxShape.circle,
               border: Border.all(color: AppColors.orangeLight, width: 2),
             ),
-            child: Icon(Icons.image_outlined, color: AppColors.muted, size: 20),
+            child: ClipOval(
+              child: Image.asset(image, fit: BoxFit.cover),
+            ),
           ),
           const SizedBox(height: 6),
           Text(label, style: const TextStyle(fontSize: 10.5, color: AppColors.ink)),
@@ -275,13 +298,13 @@ class _AssistantBanner extends StatelessWidget {
   }
 }
 
-/// Kartu resep. Bagian atas ("image placeholder") adalah tempat menaruh foto:
-/// ganti Container di dalamnya dengan Image.asset(...) / Image.network(...)
-/// dan biarkan ClipRRect di luarnya supaya sudut tetap membulat.
+/// Kartu resep dengan foto di bagian atas.
+/// Kalau file foto tidak ditemukan, otomatis tampil ikon placeholder.
 class _RecipeCard extends StatelessWidget {
-  const _RecipeCard({required this.title, required this.subtitle, required this.onTap});
+  const _RecipeCard({required this.title, required this.subtitle, required this.image, required this.onTap});
   final String title;
   final String subtitle;
+  final String image;
   final VoidCallback onTap;
 
   @override
@@ -303,10 +326,13 @@ class _RecipeCard extends StatelessWidget {
               child: Stack(
                 fit: StackFit.expand,
                 children: [
-                  // --- image placeholder: ganti dengan Image.asset/Image.network ---
-                  Container(
-                    color: AppColors.line,
-                    child: Icon(Icons.image_outlined, color: AppColors.muted, size: 28),
+                  Image.asset(
+                    image,
+                    fit: BoxFit.cover,
+                    errorBuilder: (context, error, stackTrace) => Container(
+                      color: AppColors.line,
+                      child: Icon(Icons.image_outlined, color: AppColors.muted, size: 28),
+                    ),
                   ),
                   Positioned(
                     top: 8,

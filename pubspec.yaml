@@ -63,6 +63,33 @@ flutter:
   assets:
     - assets/images/icon.png
     - assets/images/iconsplash.png
+    - assets/images/profile.jpg
+    - assets/images/pempek.jpg
+    - assets/images/nasi_goreng_spesial.jpg
+    - assets/images/lunch.jpg
+    - assets/images/dinner.jpg
+    - assets/images/dimsum_udang.jpg
+    - assets/images/cemilan.jpg
+    - assets/images/breakfast.jpg
+    - assets/images/ayam_teriyaki.jpg
+    - assets/images/ayam_geprek.jpg
+    - assets/images/bubur_kacang_hijau.jpg
+    - assets/images/capcay_kuah.jpg
+    - assets/images/ikan_bakar_bumbu_kuning.jpg
+    - assets/images/mie_goreng_pedas.jpg
+    - assets/images/omelette_sayur.jpg
+    - assets/images/oseng_tempe_pedas.jpg
+    - assets/images/pepes_tahu.jpg
+    - assets/images/perkedel_kentang.jpg
+    - assets/images/pisang_goreng_crispy.jpg
+    - assets/images/rendang_daging.jpg
+    - assets/images/salad_buah_yogurt.jpg
+    - assets/images/smoothie_bowl_vegan.jpg
+    - assets/images/soto_ayam_bening.jpg
+    - assets/images/sup_jagung_manis.jpg
+    - assets/images/sushi_roll.jpg
+    - assets/images/telur_balado.jpg
+    - assets/images/tumis_kankung.jpg
 
   # To add assets to your application, add an assets section, like this:
   # assets:

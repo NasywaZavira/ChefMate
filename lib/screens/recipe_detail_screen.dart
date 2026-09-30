@@ -5,6 +5,24 @@ import '../state/app_state.dart';
 import '../theme/app_theme.dart';
 import 'chatbot_screen.dart';
 
+/// Kalau nama file foto tidak sama dengan judul resep, tulis di sini.
+/// Format: 'judul_resep_huruf_kecil_pakai_underscore': 'nama_file_tanpa_.jpg'
+/// Harus sama dengan daftar di home_screen.dart.
+const Map<String, String> _imageAliases = {
+  'tumis_kangkung': 'tumis_kankung',
+};
+
+/// Membuat path foto otomatis dari judul resep.
+/// "Nasi Goreng Spesial" -> assets/images/nasi_goreng_spesial.jpg
+String _recipeImagePath(String title) {
+  final slug = title
+      .toLowerCase()
+      .replaceAll(RegExp(r'[^a-z0-9]+'), '_')
+      .replaceAll(RegExp(r'^_+|_+$'), '');
+  final file = _imageAliases[slug] ?? slug;
+  return 'assets/images/$file.jpg';
+}
+
 class RecipeDetailScreen extends StatefulWidget {
   const RecipeDetailScreen({super.key, required this.recipe});
 
@@ -29,12 +47,18 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
         children: [
           Stack(
             children: [
-              //  image placeholder: ganti dengan Image.asset/Image.network 
-              Container(
+              // Foto resep. Kalau file foto tidak ditemukan, tampil ikon placeholder.
+              SizedBox(
                 height: 220,
                 width: double.infinity,
-                color: AppColors.orangeLight,
-                child: const Icon(Icons.image_outlined, color: AppColors.orange, size: 40),
+                child: Image.asset(
+                  _recipeImagePath(recipe.title),
+                  fit: BoxFit.cover,
+                  errorBuilder: (context, error, stackTrace) => Container(
+                    color: AppColors.orangeLight,
+                    child: const Icon(Icons.image_outlined, color: AppColors.orange, size: 40),
+                  ),
+                ),
               ),
               Positioned(
                 top: 44,
@@ -121,14 +145,14 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
                   runSpacing: 8,
                   children: recipe.equipment
                       .map((e) => Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                            decoration: BoxDecoration(
-                              color: Colors.white,
-                              borderRadius: BorderRadius.circular(20),
-                              border: Border.all(color: AppColors.line),
-                            ),
-                            child: Text(e, style: const TextStyle(fontSize: 12, color: AppColors.ink)),
-                          ))
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(20),
+                      border: Border.all(color: AppColors.line),
+                    ),
+                    child: Text(e, style: const TextStyle(fontSize: 12, color: AppColors.ink)),
+                  ))
                       .toList(),
                 ),
                 const SizedBox(height: 20),
@@ -137,7 +161,7 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
                 const SizedBox(height: 10),
                 ...List.generate(
                   recipe.steps.length,
-                  (i) => _StepRow(number: i + 1, text: recipe.steps[i]),
+                      (i) => _StepRow(number: i + 1, text: recipe.steps[i]),
                 ),
                 const SizedBox(height: 24),
                 SizedBox(
@@ -170,7 +194,7 @@ String _scaledAmount(String amount, double scale) {
   final rest = match.group(2) ?? '';
   final scaled = value * scale;
   final formatted =
-      scaled == scaled.roundToDouble() ? scaled.toStringAsFixed(0) : scaled.toStringAsFixed(1);
+  scaled == scaled.roundToDouble() ? scaled.toStringAsFixed(0) : scaled.toStringAsFixed(1);
   return '$formatted $rest'.trim();
 }
 

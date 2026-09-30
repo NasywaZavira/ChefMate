@@ -6,6 +6,24 @@ import '../state/app_state.dart';
 import '../theme/app_theme.dart';
 import 'meal_plan_form_screen.dart';
 
+/// Kalau nama file foto tidak sama dengan judul resep, tulis di sini.
+/// Format: 'judul_resep_huruf_kecil_pakai_underscore': 'nama_file_tanpa_.jpg'
+/// Harus sama dengan daftar di home_screen.dart dan recipe_detail_screen.dart.
+const Map<String, String> _imageAliases = {
+  'tumis_kangkung': 'tumis_kankung',
+};
+
+/// Membuat path foto otomatis dari judul resep.
+/// "Soto Ayam Bening" -> assets/images/soto_ayam_bening.jpg
+String _recipeImagePath(String title) {
+  final slug = title
+      .toLowerCase()
+      .replaceAll(RegExp(r'[^a-z0-9]+'), '_')
+      .replaceAll(RegExp(r'^_+|_+$'), '');
+  final file = _imageAliases[slug] ?? slug;
+  return 'assets/images/$file.jpg';
+}
+
 class CalendarScreen extends StatefulWidget {
   const CalendarScreen({super.key});
 
@@ -44,11 +62,11 @@ class _CalendarScreenState extends State<CalendarScreen> {
               Row(
                 children: weekDays
                     .map((d) => Expanded(
-                          child: Center(
-                            child: Text(d,
-                                style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: AppColors.muted)),
-                          ),
-                        ))
+                  child: Center(
+                    child: Text(d,
+                        style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: AppColors.muted)),
+                  ),
+                ))
                     .toList(),
               ),
               const SizedBox(height: 8),
@@ -106,26 +124,26 @@ class _CalendarScreenState extends State<CalendarScreen> {
             style: Theme.of(context).textTheme.headlineMedium?.copyWith(fontSize: 15)),
         const SizedBox(height: 10),
         if (todaysMeals.isEmpty)
-          Padding(
-            padding: const EdgeInsets.symmetric(vertical: 6),
+          const Padding(
+            padding: EdgeInsets.symmetric(vertical: 6),
             child: Text('Belum ada rencana di tanggal ini.',
-                style: const TextStyle(fontSize: 13, color: AppColors.muted)),
+                style: TextStyle(fontSize: 13, color: AppColors.muted)),
           )
         else
           ...todaysMeals.map((entry) => Padding(
-                padding: const EdgeInsets.only(bottom: 8),
-                child: _PlannedMealRow(
-                  entry: entry,
-                  onTap: () async {
-                    await Navigator.of(context).push(
-                      MaterialPageRoute(
-                        builder: (_) => MealPlanFormScreen(date: _selectedDateKey, existingEntry: entry),
-                      ),
-                    );
-                    setState(() {});
-                  },
-                ),
-              )),
+            padding: const EdgeInsets.only(bottom: 8),
+            child: _PlannedMealRow(
+              entry: entry,
+              onTap: () async {
+                await Navigator.of(context).push(
+                  MaterialPageRoute(
+                    builder: (_) => MealPlanFormScreen(date: _selectedDateKey, existingEntry: entry),
+                  ),
+                );
+                setState(() {});
+              },
+            ),
+          )),
         const SizedBox(height: 4),
         InkWell(
           borderRadius: BorderRadius.circular(14),
@@ -160,7 +178,7 @@ class _PlannedMealRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final recipe = dummyRecipes.firstWhere(
-      (r) => r.id == entry.recipeId,
+          (r) => r.id == entry.recipeId,
       orElse: () => dummyRecipes.first,
     );
 
@@ -176,10 +194,16 @@ class _PlannedMealRow extends StatelessWidget {
         ),
         child: Row(
           children: [
-            Container(
-              width: 40,
-              height: 40,
-              decoration: BoxDecoration(color: AppColors.orangeLight, borderRadius: BorderRadius.circular(10)),
+            ClipRRect(
+              borderRadius: BorderRadius.circular(10),
+              child: Image.asset(
+                _recipeImagePath(recipe.title),
+                width: 40,
+                height: 40,
+                fit: BoxFit.cover,
+                errorBuilder: (context, error, stackTrace) =>
+                    Container(width: 40, height: 40, color: AppColors.orangeLight),
+              ),
             ),
             const SizedBox(width: 12),
             Expanded(
