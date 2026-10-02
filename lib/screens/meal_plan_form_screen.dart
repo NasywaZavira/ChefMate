@@ -8,9 +8,15 @@ import '../state/app_state.dart';
 import '../theme/app_theme.dart';
 
 class MealPlanFormScreen extends StatefulWidget {
-  const MealPlanFormScreen({super.key, required this.date, this.existingEntry});
+  const MealPlanFormScreen({
+    super.key,
+    required this.date,
+    this.initialMealType,
+    this.existingEntry,
+  });
 
   final String date;
+  final String? initialMealType;
   final MealPlanEntry? existingEntry;
 
   @override
@@ -20,12 +26,20 @@ class MealPlanFormScreen extends StatefulWidget {
 class _MealPlanFormScreenState extends State<MealPlanFormScreen> {
   static const mealTypes = ['Sarapan', 'Makan Siang', 'Makan Malam', 'Camilan'];
 
-  // Gaya tulisan judul/label: orange.
-  static const _labelStyle = TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: AppColors.orange);
+  // Label bagian form: teks gelap, ukuran kecil (sesuai desain awal).
+  static const _labelStyle = TextStyle(
+    fontSize: 13,
+    fontWeight: FontWeight.w500,
+    color: AppColors.orange,
+  );
 
   String? _selectedRecipeId;
   String _mealType = 'Sarapan';
-  bool _simulateError = false;
+
+  // Toggle "Simulasikan gagal" disembunyikan dari UI agar tampilan
+  // sama dengan desain. Ubah ke true untuk menguji error state.
+  final bool _simulateError = false;
+
   bool _saving = false;
   String? _submitError;
 
@@ -33,7 +47,8 @@ class _MealPlanFormScreenState extends State<MealPlanFormScreen> {
   void initState() {
     super.initState();
     _selectedRecipeId = widget.existingEntry?.recipeId;
-    _mealType = widget.existingEntry?.mealType ?? 'Sarapan';
+    _mealType =
+        widget.existingEntry?.mealType ?? widget.initialMealType ?? 'Sarapan';
   }
 
   Future<void> _submit() async {
@@ -121,36 +136,109 @@ class _MealPlanFormScreenState extends State<MealPlanFormScreen> {
       appBar: AppBar(
         backgroundColor: AppColors.cream,
         elevation: 0,
+        scrolledUnderElevation: 0,
         foregroundColor: AppColors.orange,
+        // Panah kembali (bukan tombol close) seperti desain awal.
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () => Navigator.of(context).pop(),
+        ),
         title: Text(
           widget.existingEntry == null
-              ? 'Tambah rencana makan'
-              : 'Edit rencana makan',
-          style: const TextStyle(color: AppColors.orange, fontWeight: FontWeight.w700),
-        ),
-        leading: IconButton(
-          icon: const Icon(Icons.close_rounded),
-          onPressed: () => Navigator.of(context).pop(),
+              ? 'Tambah Rencana Makan'
+              : 'Edit Rencana Makan',
+          style: const TextStyle(
+            fontSize: 18,
+            fontWeight: FontWeight.w400,
+            color: AppColors.orange,
+          ),
         ),
       ),
       body: ListView(
-        padding: const EdgeInsets.fromLTRB(20, 8, 20, 24),
+        padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
         children: [
-          Text(
-            'Rencana untuk ${widget.date}',
-            style: Theme.of(context).textTheme.headlineMedium
-                ?.copyWith(fontSize: 16, color: AppColors.orange),
+          // ---- Tanggal ----
+          const Text('Tanggal', style: _labelStyle),
+          const SizedBox(height: 8),
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(color: AppColors.line),
+            ),
+            child: Text(
+              widget.date,
+              style: const TextStyle(fontSize: 13, color: AppColors.muted),
+            ),
           ),
           const SizedBox(height: 18),
+
+          // ---- Jenis Makan ----
+          const Text('Jenis Makan', style: _labelStyle),
+          const SizedBox(height: 8),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: mealTypes.map((mealType) {
+              final active = _mealType == mealType;
+              return ChoiceChip(
+                label: Text(
+                  mealType,
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: active ? Colors.white : AppColors.orange,
+                  ),
+                ),
+                selected: active,
+                selectedColor: AppColors.orange,
+                backgroundColor: Colors.white,
+                checkmarkColor: Colors.white,
+                side: BorderSide(
+                  color: active ? AppColors.orange : AppColors.line,
+                ),
+                onSelected: _saving
+                    ? null
+                    : (_) {
+                  setState(() {
+                    _mealType = mealType;
+                  });
+                },
+              );
+            }).toList(),
+          ),
+          const SizedBox(height: 18),
+
+          // ---- Pilih Resep ----
+          const Text('Pilih Resep', style: _labelStyle),
+          const SizedBox(height: 8),
           DropdownButtonFormField<String>(
             initialValue: _selectedRecipeId,
-            decoration: const InputDecoration(
-              labelText: 'Resep',
-              labelStyle: TextStyle(color: AppColors.orange),
-              floatingLabelStyle: TextStyle(color: AppColors.orange, fontWeight: FontWeight.w600),
-              border: OutlineInputBorder(),
+            isExpanded: true,
+            decoration: InputDecoration(
+              filled: true,
+              fillColor: Colors.white,
+              contentPadding:
+              const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(8),
+                borderSide: const BorderSide(color: AppColors.line),
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(8),
+                borderSide: const BorderSide(color: AppColors.orange),
+              ),
+              disabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(8),
+                borderSide: const BorderSide(color: AppColors.line),
+              ),
             ),
-            hint: const Text('Pilih resep'),
+            hint: const Text(
+              'Pilih resep...',
+              style: TextStyle(fontSize: 13, color: AppColors.muted),
+            ),
+            style: const TextStyle(fontSize: 13, color: AppColors.orange),
             items: dummyRecipes
                 .map(
                   (recipe) => DropdownMenuItem<String>(
@@ -168,65 +256,8 @@ class _MealPlanFormScreenState extends State<MealPlanFormScreen> {
               });
             },
           ),
-          if (_submitError != null && _selectedRecipeId == null) ...[
-            const SizedBox(height: 8),
-            Text(
-              _submitError!,
-              style: const TextStyle(fontSize: 12, color: AppColors.red),
-            ),
-          ],
-          const SizedBox(height: 18),
-          const Text('Jenis makanan', style: _labelStyle),
-          const SizedBox(height: 8),
-          Wrap(
-            spacing: 8,
-            runSpacing: 8,
-            children: mealTypes.map((mealType) {
-              final active = _mealType == mealType;
-              return ChoiceChip(
-                label: Text(
-                  mealType,
-                  style: TextStyle(
-                    fontSize: 12,
-                    // Belum dipilih: abu-abu. Sudah dipilih: putih di atas orange.
-                    color: active ? Colors.white : AppColors.muted,
-                  ),
-                ),
-                selected: active,
-                selectedColor: AppColors.orange,
-                backgroundColor: Colors.white,
-                checkmarkColor: Colors.white,
-                side: BorderSide(color: active ? AppColors.orange : AppColors.line),
-                onSelected: _saving
-                    ? null
-                    : (_) {
-                  setState(() {
-                    _mealType = mealType;
-                  });
-                },
-              );
-            }).toList(),
-          ),
-          const SizedBox(height: 18),
-          SwitchListTile(
-            contentPadding: EdgeInsets.zero,
-            dense: true,
-            title: const Text(
-              'Simulasikan gagal (untuk demo/uji)',
-              style: TextStyle(fontSize: 11, color: AppColors.muted),
-            ),
-            value: _simulateError,
-            activeThumbColor: AppColors.orange,
-            onChanged: _saving
-                ? null
-                : (v) {
-              setState(() {
-                _simulateError = v;
-                _submitError = null;
-              });
-            },
-          ),
-          if (_submitError != null && _selectedRecipeId != null) ...[
+
+          if (_submitError != null) ...[
             const SizedBox(height: 8),
             Text(
               _submitError!,
@@ -234,6 +265,8 @@ class _MealPlanFormScreenState extends State<MealPlanFormScreen> {
             ),
           ],
           const SizedBox(height: 20),
+
+          // ---- Tombol ----
           Row(
             children: [
               if (widget.existingEntry != null)

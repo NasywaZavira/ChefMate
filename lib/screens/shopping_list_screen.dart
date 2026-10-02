@@ -26,7 +26,10 @@ class _ShoppingListScreenState extends State<ShoppingListScreen> {
     String? amountError;
     String? submitError;
     var saving = false;
-    var simulateError = false;
+
+    // Toggle "Simulasikan gagal" dihapus dari tampilan dialog.
+    // Ubah ke true kalau ingin menguji kondisi error.
+    const simulateError = false;
 
     // Gaya pesan error di atas latar orange: putih tebal supaya terbaca.
     const errorStyle = TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Colors.white);
@@ -111,21 +114,8 @@ class _ShoppingListScreenState extends State<ShoppingListScreen> {
                     errorStyle: errorStyle,
                   ),
                 ),
-                const SizedBox(height: 4),
-                SwitchListTile(
-                  contentPadding: EdgeInsets.zero,
-                  dense: true,
-                  title: const Text(
-                    'Simulasikan gagal (untuk demo/uji)',
-                    style: TextStyle(fontSize: 11, color: Colors.white),
-                  ),
-                  value: simulateError,
-                  activeThumbColor: Colors.white,
-                  activeTrackColor: const Color(0xFFC2500A),
-                  onChanged: saving ? null : (v) => setDialogState(() => simulateError = v),
-                ),
                 if (submitError != null) ...[
-                  const SizedBox(height: 4),
+                  const SizedBox(height: 8),
                   Text(submitError!, style: errorStyle),
                 ],
               ],
