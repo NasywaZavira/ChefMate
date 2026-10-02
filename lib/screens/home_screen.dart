@@ -6,9 +6,10 @@ import '../theme/app_theme.dart';
 import 'chatbot_screen.dart';
 import 'recipe_detail_screen.dart';
 
-const Map<String, String> _imageAliases = {
-  'tumis_kangkung': 'tumis_kankung',
-};
+/// Kalau nama file foto tidak sama dengan judul resep, tulis di sini.
+/// Format: 'judul_resep_huruf_kecil_pakai_underscore': 'nama_file_tanpa_.jpg'
+/// Contoh: judul "Tumis Kangkung" -> file "tumis_kankung.jpg".
+const Map<String, String> _imageAliases = {'tumis_kangkung': 'tumis_kankung'};
 
 /// ID khusus untuk kategori "Favorit" (bukan kategori dari data resep).
 const String _favoriteId = '__favorit__';
@@ -39,6 +40,16 @@ class _HomeScreenState extends State<HomeScreen> {
   String? _activeCategoryId; // null = "Semua", _favoriteId = "Favorit"
   final _searchController = TextEditingController();
   String _query = '';
+  bool _isLoadingRecipes = true;
+
+  @override
+  void initState() {
+    super.initState();
+    Future.delayed(const Duration(milliseconds: 500), () {
+      if (!mounted) return;
+      setState(() => _isLoadingRecipes = false);
+    });
+  }
 
   @override
   void dispose() {
@@ -48,6 +59,22 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
+    if (_isLoadingRecipes) {
+      return const Center(
+        child: Padding(
+          padding: EdgeInsets.all(24),
+          child: SizedBox(
+            width: 28,
+            height: 28,
+            child: CircularProgressIndicator(
+              strokeWidth: 3,
+              valueColor: AlwaysStoppedAnimation<Color>(AppColors.orange),
+            ),
+          ),
+        ),
+      );
+    }
+
     const mealTypes = [
       {'label': 'Sarapan', 'icon': Icons.egg_alt_rounded, 'image': 'assets/images/breakfast.jpg'},
       {'label': 'Makan Siang', 'icon': Icons.ramen_dining_rounded, 'image': 'assets/images/lunch.jpg'},
