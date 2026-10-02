@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
+import '../data/app_repository.dart';
 import '../models/shopping_item.dart';
 import '../state/app_state.dart';
 import '../theme/app_theme.dart';
@@ -13,59 +14,170 @@ class ShoppingListScreen extends StatefulWidget {
 }
 
 class _ShoppingListScreenState extends State<ShoppingListScreen> {
+  /// ID item yang sedang dihapus (lewat repository, ada jeda simulasi),
+  /// supaya baris itu bisa menampilkan spinner & tombol hapusnya nonaktif
+  /// sementara — ini juga mencegah dobel-tap memicu hapus dua kali.
+  final Set<String> _deletingIds = {};
+
   Future<void> _openForm({ShoppingItem? existing}) async {
     final nameController = TextEditingController(text: existing?.name ?? '');
     final amountController = TextEditingController(text: existing?.amount ?? '');
-    String? error;
+    String? nameError;
+    String? amountError;
+    String? submitError;
+    var saving = false;
+    var simulateError = false;
 
     await showDialog<void>(
       context: context,
       builder: (context) => StatefulBuilder(
-        builder: (context, setDialogState) => AlertDialog(
-          backgroundColor: AppColors.cream,
-          title: Text(existing == null ? 'Tambah Item' : 'Edit Item'),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              TextField(
-                controller: nameController,
-                decoration: const InputDecoration(labelText: 'Nama bahan'),
-              ),
-              const SizedBox(height: 10),
-              TextField(
-                controller: amountController,
-                decoration: const InputDecoration(labelText: 'Jumlah (mis. 2 buah)'),
-              ),
-              if (error != null) ...[
-                const SizedBox(height: 8),
-                Text(error!, style: const TextStyle(fontSize: 12, color: AppColors.red)),
+        builder: (context, setDialogState) {
+          Future<void> handleSave() async {
+            final name = nameController.text.trim();
+            final amount = amountController.text.trim();
+
+            final nextNameError = name.isEmpty ? 'Nama bahan wajib diisi.' : null;
+            final nextAmountError = amount.isEmpty ? 'Jumlah wajib diisi.' : null;
+            if (nextNameError != null || nextAmountError != null) {
+              setDialogState(() {
+                nameError = nextNameError;
+                amountError = nextAmountError;
+              });
+              return;
+            }
+            if (saving) return; // cegah submit ganda akibat ketukan berulang
+
+            setDialogState(() {
+              saving = true;
+              nameError = null;
+              amountError = null;
+              submitError = null;
+            });
+
+            try {
+              await appRepository.saveShoppingItem(
+                name: name,
+                amount: amount,
+                existingId: existing?.id,
+                sourceRecipeId: existing?.sourceRecipeId,
+                simulateError: simulateError,
+              );
+              if (!context.mounted) return;
+              Navigator.of(context).pop();
+              if (!mounted) return;
+              ScaffoldMessenger.of(this.context).showSnackBar(
+                SnackBar(content: Text(existing == null ? 'Item ditambahkan.' : 'Item diperbarui.')),
+              );
+            } catch (e) {
+              setDialogState(() {
+                saving = false;
+                submitError = e.toString().replaceFirst('Exception: ', '');
+              });
+            }
+          }
+
+          return AlertDialog(
+            backgroundColor: AppColors.cream,
+            title: Text(existing == null ? 'Tambah Item' : 'Edit Item'),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                TextField(
+                  controller: nameController,
+                  enabled: !saving,
+                  decoration: InputDecoration(labelText: 'Nama bahan', errorText: nameError),
+                ),
+                const SizedBox(height: 10),
+                TextField(
+                  controller: amountController,
+                  enabled: !saving,
+                  decoration: InputDecoration(labelText: 'Jumlah (mis. 2 buah)', errorText: amountError),
+                ),
+                const SizedBox(height: 4),
+                SwitchListTile(
+                  contentPadding: EdgeInsets.zero,
+                  dense: true,
+                  title: const Text(
+                    'Simulasikan gagal (untuk demo/uji)',
+                    style: TextStyle(fontSize: 11, color: AppColors.muted),
+                  ),
+                  value: simulateError,
+                  activeThumbColor: AppColors.orange,
+                  onChanged: saving ? null : (v) => setDialogState(() => simulateError = v),
+                ),
+                if (submitError != null) ...[
+                  const SizedBox(height: 4),
+                  Text(submitError!, style: const TextStyle(fontSize: 12, color: AppColors.red)),
+                ],
               ],
-            ],
-          ),
-          actions: [
-            TextButton(onPressed: () => Navigator.of(context).pop(), child: const Text('Batal')),
-            ElevatedButton(
-              onPressed: () {
-                final name = nameController.text.trim();
-                final amount = amountController.text.trim();
-                if (name.isEmpty || amount.isEmpty) {
-                  setDialogState(() => error = 'Nama dan jumlah wajib diisi.');
-                  return;
-                }
-                if (existing == null) {
-                  appState.addShoppingItem(name: name, amount: amount);
-                } else {
-                  appState.updateShoppingItem(existing.id, name: name, amount: amount);
-                }
-                Navigator.of(context).pop();
-              },
-              child: const Text('Simpan'),
             ),
-          ],
-        ),
+            actions: [
+              TextButton(
+                onPressed: saving ? null : () => Navigator.of(context).pop(),
+                child: const Text('Batal'),
+              ),
+              ElevatedButton(
+                onPressed: saving ? null : handleSave,
+                child: saving
+                    ? const SizedBox(
+                        width: 16,
+                        height: 16,
+                        child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                      )
+                    : Text(submitError != null ? 'Coba lagi' : 'Simpan'),
+              ),
+            ],
+          );
+        },
       ),
     );
-    setState(() {});
+    if (mounted) setState(() {});
+  }
+
+  Future<void> _confirmDelete(ShoppingItem item) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: AppColors.cream,
+        title: const Text('Hapus item ini?'),
+        content: Text(
+          '"${item.name}" akan dihapus dari daftar belanja.',
+          style: const TextStyle(fontSize: 13, color: AppColors.ink),
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.of(context).pop(false), child: const Text('Batal')),
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            child: const Text('Hapus', style: TextStyle(color: AppColors.red)),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true) return;
+    await _delete(item);
+  }
+
+  Future<void> _delete(ShoppingItem item) async {
+    if (_deletingIds.contains(item.id)) return; // cegah dobel-tap
+    setState(() => _deletingIds.add(item.id));
+
+    try {
+      await appRepository.deleteShoppingItem(item.id);
+      if (!mounted) return;
+      setState(() => _deletingIds.remove(item.id));
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Item dihapus.')),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      setState(() => _deletingIds.remove(item.id));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(e.toString().replaceFirst('Exception: ', '')),
+          action: SnackBarAction(label: 'Coba lagi', onPressed: () => _delete(item)),
+        ),
+      );
+    }
   }
 
   Future<void> _shareList() async {
@@ -118,39 +230,54 @@ class _ShoppingListScreenState extends State<ShoppingListScreen> {
               style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: AppColors.ink)),
           const SizedBox(height: 8),
           if (unbought.isEmpty)
-            const Padding(
-              padding: EdgeInsets.symmetric(vertical: 6),
-              child: Text('Semua bahan sudah dibeli.', style: TextStyle(fontSize: 13, color: AppColors.muted)),
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 10),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text('Semua bahan sudah dibeli.', style: TextStyle(fontSize: 13, color: AppColors.muted)),
+                  const SizedBox(height: 6),
+                  TextButton.icon(
+                    onPressed: () => _openForm(),
+                    style: TextButton.styleFrom(padding: EdgeInsets.zero, alignment: Alignment.centerLeft),
+                    icon: const Icon(Icons.add_rounded, size: 18),
+                    label: const Text('Tambah bahan baru'),
+                  ),
+                ],
+              ),
             )
           else
             ...unbought.map((i) => _ShoppingRow(
                   item: i,
+                  isDeleting: _deletingIds.contains(i.id),
                   onToggle: () {
                     appState.toggleShoppingItem(i.id);
                     setState(() {});
                   },
                   onEdit: () => _openForm(existing: i),
-                  onDelete: () {
-                    appState.deleteShoppingItem(i.id);
-                    setState(() {});
-                  },
+                  onDelete: () => _confirmDelete(i),
                 )),
           const SizedBox(height: 16),
           Text('Sudah dibeli (${bought.length})',
               style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: AppColors.muted)),
           const SizedBox(height: 8),
-          ...bought.map((i) => _ShoppingRow(
-                item: i,
-                onToggle: () {
-                  appState.toggleShoppingItem(i.id);
-                  setState(() {});
-                },
-                onEdit: () => _openForm(existing: i),
-                onDelete: () {
-                  appState.deleteShoppingItem(i.id);
-                  setState(() {});
-                },
-              )),
+          if (bought.isEmpty)
+            const Padding(
+              padding: EdgeInsets.symmetric(vertical: 6),
+              child: Text('Belum ada yang dicentang selesai dibeli.',
+                  style: TextStyle(fontSize: 13, color: AppColors.muted)),
+            )
+          else
+            ...bought.map((i) => _ShoppingRow(
+                  item: i,
+                  isDeleting: _deletingIds.contains(i.id),
+                  onToggle: () {
+                    appState.toggleShoppingItem(i.id);
+                    setState(() {});
+                  },
+                  onEdit: () => _openForm(existing: i),
+                  onDelete: () => _confirmDelete(i),
+                )),
         ],
       ),
       floatingActionButton: FloatingActionButton(
@@ -168,12 +295,14 @@ class _ShoppingRow extends StatelessWidget {
     required this.onToggle,
     required this.onEdit,
     required this.onDelete,
+    this.isDeleting = false,
   });
 
   final ShoppingItem item;
   final VoidCallback onToggle;
   final VoidCallback onEdit;
   final VoidCallback onDelete;
+  final bool isDeleting;
 
   @override
   Widget build(BuildContext context) {
@@ -186,47 +315,60 @@ class _ShoppingRow extends StatelessWidget {
         borderRadius: BorderRadius.circular(12),
         border: Border.all(color: AppColors.line),
       ),
-      child: Row(children: [
-        InkWell(
-          onTap: onToggle,
-          customBorder: const CircleBorder(),
-          child: Container(
-            width: 20,
-            height: 20,
-            decoration: BoxDecoration(
-              color: checked ? AppColors.green : Colors.transparent,
-              borderRadius: BorderRadius.circular(6),
-              border: Border.all(color: checked ? AppColors.green : AppColors.line, width: 1.4),
+      child: Opacity(
+        opacity: isDeleting ? 0.5 : 1,
+        child: Row(children: [
+          InkWell(
+            onTap: isDeleting ? null : onToggle,
+            customBorder: const CircleBorder(),
+            child: Container(
+              width: 20,
+              height: 20,
+              decoration: BoxDecoration(
+                color: checked ? AppColors.green : Colors.transparent,
+                borderRadius: BorderRadius.circular(6),
+                border: Border.all(color: checked ? AppColors.green : AppColors.line, width: 1.4),
+              ),
+              child: checked ? const Icon(Icons.check_rounded, size: 14, color: Colors.white) : null,
             ),
-            child: checked ? const Icon(Icons.check_rounded, size: 14, color: Colors.white) : null,
           ),
-        ),
-        const SizedBox(width: 12),
-        Expanded(
-          child: GestureDetector(
-            onTap: onEdit,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  item.name,
-                  style: TextStyle(
-                    fontSize: 13,
-                    color: checked ? AppColors.muted : AppColors.ink,
-                    decoration: checked ? TextDecoration.lineThrough : null,
+          const SizedBox(width: 12),
+          Expanded(
+            child: GestureDetector(
+              onTap: isDeleting ? null : onEdit,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    item.name,
+                    style: TextStyle(
+                      fontSize: 13,
+                      color: checked ? AppColors.muted : AppColors.ink,
+                      decoration: checked ? TextDecoration.lineThrough : null,
+                    ),
                   ),
-                ),
-                Text(item.amount, style: const TextStyle(fontSize: 11, color: AppColors.muted)),
-              ],
+                  Text(item.amount, style: const TextStyle(fontSize: 11, color: AppColors.muted)),
+                ],
+              ),
             ),
           ),
-        ),
-        IconButton(
-          onPressed: onDelete,
-          icon: const Icon(Icons.delete_outline_rounded, size: 20, color: AppColors.red),
-          splashRadius: 20,
-        ),
-      ]),
+          if (isDeleting)
+            const SizedBox(
+              width: 20,
+              height: 20,
+              child: Padding(
+                padding: EdgeInsets.all(10),
+                child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.red),
+              ),
+            )
+          else
+            IconButton(
+              onPressed: onDelete,
+              icon: const Icon(Icons.delete_outline_rounded, size: 20, color: AppColors.red),
+              splashRadius: 20,
+            ),
+        ]),
+      ),
     );
   }
 }
