@@ -9,9 +9,7 @@ import 'recipe_detail_screen.dart';
 /// Kalau nama file foto tidak sama dengan judul resep, tulis di sini.
 /// Format: 'judul_resep_huruf_kecil_pakai_underscore': 'nama_file_tanpa_.jpg'
 /// Contoh: judul "Tumis Kangkung" -> file "tumis_kankung.jpg".
-const Map<String, String> _imageAliases = {
-  'tumis_kangkung': 'tumis_kankung',
-};
+const Map<String, String> _imageAliases = {'tumis_kangkung': 'tumis_kankung'};
 
 /// Membuat path foto otomatis dari judul resep.
 /// "Nasi Goreng Spesial" -> assets/images/nasi_goreng_spesial.jpg
@@ -39,6 +37,16 @@ class _HomeScreenState extends State<HomeScreen> {
   String? _activeCategoryId; // null = "Semua"
   final _searchController = TextEditingController();
   String _query = '';
+  bool _isLoadingRecipes = true;
+
+  @override
+  void initState() {
+    super.initState();
+    Future.delayed(const Duration(milliseconds: 500), () {
+      if (!mounted) return;
+      setState(() => _isLoadingRecipes = false);
+    });
+  }
 
   @override
   void dispose() {
@@ -48,11 +56,43 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
+    if (_isLoadingRecipes) {
+      return const Center(
+        child: Padding(
+          padding: EdgeInsets.all(24),
+          child: SizedBox(
+            width: 28,
+            height: 28,
+            child: CircularProgressIndicator(
+              strokeWidth: 3,
+              valueColor: AlwaysStoppedAnimation<Color>(AppColors.orange),
+            ),
+          ),
+        ),
+      );
+    }
+
     const mealTypes = [
-      {'label': 'Sarapan', 'icon': Icons.egg_alt_rounded, 'image': 'assets/images/breakfast.jpg'},
-      {'label': 'Makan Siang', 'icon': Icons.ramen_dining_rounded, 'image': 'assets/images/lunch.jpg'},
-      {'label': 'Makan Malam', 'icon': Icons.dinner_dining_rounded, 'image': 'assets/images/dinner.jpg'},
-      {'label': 'Camilan', 'icon': Icons.icecream_rounded, 'image': 'assets/images/cemilan.jpg'},
+      {
+        'label': 'Sarapan',
+        'icon': Icons.egg_alt_rounded,
+        'image': 'assets/images/breakfast.jpg',
+      },
+      {
+        'label': 'Makan Siang',
+        'icon': Icons.ramen_dining_rounded,
+        'image': 'assets/images/lunch.jpg',
+      },
+      {
+        'label': 'Makan Malam',
+        'icon': Icons.dinner_dining_rounded,
+        'image': 'assets/images/dinner.jpg',
+      },
+      {
+        'label': 'Camilan',
+        'icon': Icons.icecream_rounded,
+        'image': 'assets/images/cemilan.jpg',
+      },
     ];
 
     final byCategory = _activeCategoryId == null
@@ -63,11 +103,12 @@ class _HomeScreenState extends State<HomeScreen> {
     final filteredRecipes = query.isEmpty
         ? byCategory
         : byCategory.where((r) {
-      final inTitle = r.title.toLowerCase().contains(query);
-      final inIngredients =
-      r.ingredients.any((ing) => ing.name.toLowerCase().contains(query));
-      return inTitle || inIngredients;
-    }).toList();
+            final inTitle = r.title.toLowerCase().contains(query);
+            final inIngredients = r.ingredients.any(
+              (ing) => ing.name.toLowerCase().contains(query),
+            );
+            return inTitle || inIngredients;
+          }).toList();
 
     return ListView(
       padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
@@ -77,24 +118,36 @@ class _HomeScreenState extends State<HomeScreen> {
             Container(
               width: 52,
               height: 52,
-              decoration: const BoxDecoration(color: AppColors.orangeLight, shape: BoxShape.circle),
+              decoration: const BoxDecoration(
+                color: AppColors.orangeLight,
+                shape: BoxShape.circle,
+              ),
               child: ClipOval(
-                child: Image.asset('assets/images/profile.jpg', fit: BoxFit.cover),
+                child: Image.asset(
+                  'assets/images/profile.jpg',
+                  fit: BoxFit.cover,
+                ),
               ),
             ),
             const SizedBox(width: 12),
             Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text('Hallo,',
-                    style: TextStyle(fontSize: 13, color: AppColors.orange, fontWeight: FontWeight.w600)),
+                const Text(
+                  'Hallo,',
+                  style: TextStyle(
+                    fontSize: 13,
+                    color: AppColors.orange,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
                 AnimatedBuilder(
                   animation: appState,
-                  builder: (context, _) => Text(appState.userName,
-                      style: Theme.of(context)
-                          .textTheme
-                          .headlineMedium
-                          ?.copyWith(fontSize: 17, color: AppColors.orange)),
+                  builder: (context, _) => Text(
+                    appState.userName,
+                    style: Theme.of(context).textTheme.headlineMedium
+                        ?.copyWith(fontSize: 17, color: AppColors.orange),
+                  ),
                 ),
               ],
             ),
@@ -104,55 +157,80 @@ class _HomeScreenState extends State<HomeScreen> {
         Container(
           height: 46,
           padding: const EdgeInsets.symmetric(horizontal: 14),
-          decoration: BoxDecoration(color: AppColors.orangeLight, borderRadius: BorderRadius.circular(14)),
-          child: Row(children: [
-            const Icon(Icons.search_rounded, size: 18, color: AppColors.orange),
-            const SizedBox(width: 8),
-            Expanded(
-              child: TextField(
-                controller: _searchController,
-                onChanged: (v) => setState(() => _query = v),
-                style: const TextStyle(fontSize: 12.5, color: AppColors.ink),
-                decoration: const InputDecoration(
-                  isDense: true,
-                  border: InputBorder.none,
-                  hintText: 'Cari resep, bahan, atau makanan',
-                  hintStyle: TextStyle(fontSize: 12.5, color: AppColors.muted),
+          decoration: BoxDecoration(
+            color: AppColors.orangeLight,
+            borderRadius: BorderRadius.circular(14),
+          ),
+          child: Row(
+            children: [
+              const Icon(
+                Icons.search_rounded,
+                size: 18,
+                color: AppColors.orange,
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: TextField(
+                  controller: _searchController,
+                  onChanged: (v) => setState(() => _query = v),
+                  style: const TextStyle(fontSize: 12.5, color: AppColors.ink),
+                  decoration: const InputDecoration(
+                    isDense: true,
+                    border: InputBorder.none,
+                    hintText: 'Cari resep, bahan, atau makanan',
+                    hintStyle: TextStyle(
+                      fontSize: 12.5,
+                      color: AppColors.muted,
+                    ),
+                  ),
                 ),
               ),
-            ),
-            if (_query.isNotEmpty)
-              InkWell(
-                onTap: () => setState(() {
-                  _searchController.clear();
-                  _query = '';
-                }),
-                child: const Icon(Icons.close_rounded, size: 16, color: AppColors.muted),
-              ),
-          ]),
+              if (_query.isNotEmpty)
+                InkWell(
+                  onTap: () => setState(() {
+                    _searchController.clear();
+                    _query = '';
+                  }),
+                  child: const Icon(
+                    Icons.close_rounded,
+                    size: 16,
+                    color: AppColors.muted,
+                  ),
+                ),
+            ],
+          ),
         ),
         const SizedBox(height: 22),
-        Text('Rencana Menu Hari Ini',
-            style: Theme.of(context).textTheme.headlineMedium?.copyWith(fontSize: 16, color: AppColors.orange)),
+        Text(
+          'Rencana Menu Hari Ini',
+          style: Theme.of(context).textTheme.headlineMedium
+              ?.copyWith(fontSize: 16, color: AppColors.orange),
+        ),
         const SizedBox(height: 12),
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: mealTypes
-              .map((m) => _MealTypeAvatar(
-            label: m['label'] as String,
-            icon: m['icon'] as IconData,
-            image: m['image'] as String,
-            onTap: widget.onNavigateToCalendar,
-          ))
+              .map(
+                (m) => _MealTypeAvatar(
+                  label: m['label'] as String,
+                  icon: m['icon'] as IconData,
+                  image: m['image'] as String,
+                  onTap: widget.onNavigateToCalendar,
+                ),
+              )
               .toList(),
         ),
         const SizedBox(height: 18),
         _AssistantBanner(
-          onTap: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const ChatbotScreen())),
+          onTap: () => Navigator.of(context)
+              .push(MaterialPageRoute(builder: (_) => const ChatbotScreen())),
         ),
         const SizedBox(height: 22),
-        Text('Kategori',
-            style: Theme.of(context).textTheme.headlineMedium?.copyWith(fontSize: 16, color: AppColors.orange)),
+        Text(
+          'Kategori',
+          style: Theme.of(context).textTheme.headlineMedium
+              ?.copyWith(fontSize: 16, color: AppColors.orange),
+        ),
         const SizedBox(height: 10),
         SizedBox(
           height: 34,
@@ -164,14 +242,16 @@ class _HomeScreenState extends State<HomeScreen> {
                 active: _activeCategoryId == null,
                 onTap: () => setState(() => _activeCategoryId = null),
               ),
-              ...categories.map((c) => Padding(
-                padding: const EdgeInsets.only(left: 8),
-                child: _CategoryChip(
-                  label: c.name,
-                  active: _activeCategoryId == c.id,
-                  onTap: () => setState(() => _activeCategoryId = c.id),
+              ...categories.map(
+                (c) => Padding(
+                  padding: const EdgeInsets.only(left: 8),
+                  child: _CategoryChip(
+                    label: c.name,
+                    active: _activeCategoryId == c.id,
+                    onTap: () => setState(() => _activeCategoryId = c.id),
+                  ),
                 ),
-              )),
+              ),
             ],
           ),
         ),
@@ -179,7 +259,10 @@ class _HomeScreenState extends State<HomeScreen> {
         if (filteredRecipes.isEmpty)
           const Padding(
             padding: EdgeInsets.symmetric(vertical: 12),
-            child: Text('Belum ada resep di kategori ini.', style: TextStyle(fontSize: 13, color: AppColors.muted)),
+            child: Text(
+              'Belum ada resep di kategori ini.',
+              style: TextStyle(fontSize: 13, color: AppColors.muted),
+            ),
           )
         else
           GridView.count(
@@ -190,13 +273,18 @@ class _HomeScreenState extends State<HomeScreen> {
             crossAxisSpacing: 12,
             childAspectRatio: 0.8,
             children: filteredRecipes
-                .map((r) => _RecipeCard(
-              title: r.title,
-              subtitle: r.subtitle,
-              image: _recipeImagePath(r.title),
-              onTap: () => Navigator.of(context)
-                  .push(MaterialPageRoute(builder: (_) => RecipeDetailScreen(recipe: r))),
-            ))
+                .map(
+                  (r) => _RecipeCard(
+                    title: r.title,
+                    subtitle: r.subtitle,
+                    image: _recipeImagePath(r.title),
+                    onTap: () => Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (_) => RecipeDetailScreen(recipe: r),
+                      ),
+                    ),
+                  ),
+                )
                 .toList(),
           ),
       ],
@@ -205,7 +293,11 @@ class _HomeScreenState extends State<HomeScreen> {
 }
 
 class _CategoryChip extends StatelessWidget {
-  const _CategoryChip({required this.label, required this.active, required this.onTap});
+  const _CategoryChip({
+    required this.label,
+    required this.active,
+    required this.onTap,
+  });
   final String label;
   final bool active;
   final VoidCallback onTap;
@@ -223,7 +315,13 @@ class _CategoryChip extends StatelessWidget {
           borderRadius: BorderRadius.circular(20),
           border: Border.all(color: active ? AppColors.orange : AppColors.line),
         ),
-        child: Text(label, style: TextStyle(fontSize: 12, color: active ? Colors.white : AppColors.ink)),
+        child: Text(
+          label,
+          style: TextStyle(
+            fontSize: 12,
+            color: active ? Colors.white : AppColors.ink,
+          ),
+        ),
       ),
     );
   }
@@ -231,7 +329,12 @@ class _CategoryChip extends StatelessWidget {
 
 /// Foto bulat untuk tiap jenis makan.
 class _MealTypeAvatar extends StatelessWidget {
-  const _MealTypeAvatar({required this.label, required this.icon, required this.image, this.onTap});
+  const _MealTypeAvatar({
+    required this.label,
+    required this.icon,
+    required this.image,
+    this.onTap,
+  });
   final String label;
   final IconData icon;
   final String image;
@@ -252,12 +355,13 @@ class _MealTypeAvatar extends StatelessWidget {
               shape: BoxShape.circle,
               border: Border.all(color: AppColors.orangeLight, width: 2),
             ),
-            child: ClipOval(
-              child: Image.asset(image, fit: BoxFit.cover),
-            ),
+            child: ClipOval(child: Image.asset(image, fit: BoxFit.cover)),
           ),
           const SizedBox(height: 6),
-          Text(label, style: const TextStyle(fontSize: 10.5, color: AppColors.ink)),
+          Text(
+            label,
+            style: const TextStyle(fontSize: 10.5, color: AppColors.ink),
+          ),
         ],
       ),
     );
@@ -276,19 +380,35 @@ class _AssistantBanner extends StatelessWidget {
       borderRadius: BorderRadius.circular(16),
       child: Container(
         padding: const EdgeInsets.all(14),
-        decoration: BoxDecoration(color: AppColors.orange, borderRadius: BorderRadius.circular(16)),
+        decoration: BoxDecoration(
+          color: AppColors.orange,
+          borderRadius: BorderRadius.circular(16),
+        ),
         child: Row(
           children: [
             Container(
               width: 38,
               height: 38,
-              decoration: const BoxDecoration(color: Colors.white, shape: BoxShape.circle),
-              child: const Icon(Icons.smart_toy_rounded, color: AppColors.orange, size: 19),
+              decoration: const BoxDecoration(
+                color: Colors.white,
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(
+                Icons.smart_toy_rounded,
+                color: AppColors.orange,
+                size: 19,
+              ),
             ),
             const SizedBox(width: 12),
             const Expanded(
-              child: Text('ChefMate AI Assistant',
-                  style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: Colors.white)),
+              child: Text(
+                'ChefMate AI Assistant',
+                style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                  color: Colors.white,
+                ),
+              ),
             ),
             const Icon(Icons.chevron_right_rounded, color: Colors.white),
           ],
@@ -301,7 +421,12 @@ class _AssistantBanner extends StatelessWidget {
 /// Kartu resep dengan foto di bagian atas.
 /// Kalau file foto tidak ditemukan, otomatis tampil ikon placeholder.
 class _RecipeCard extends StatelessWidget {
-  const _RecipeCard({required this.title, required this.subtitle, required this.image, required this.onTap});
+  const _RecipeCard({
+    required this.title,
+    required this.subtitle,
+    required this.image,
+    required this.onTap,
+  });
   final String title;
   final String subtitle;
   final String image;
@@ -331,7 +456,11 @@ class _RecipeCard extends StatelessWidget {
                     fit: BoxFit.cover,
                     errorBuilder: (context, error, stackTrace) => Container(
                       color: AppColors.line,
-                      child: Icon(Icons.image_outlined, color: AppColors.muted, size: 28),
+                      child: Icon(
+                        Icons.image_outlined,
+                        color: AppColors.muted,
+                        size: 28,
+                      ),
                     ),
                   ),
                   Positioned(
@@ -340,8 +469,15 @@ class _RecipeCard extends StatelessWidget {
                     child: Container(
                       width: 24,
                       height: 24,
-                      decoration: const BoxDecoration(color: Colors.white, shape: BoxShape.circle),
-                      child: const Icon(Icons.thumb_up_rounded, size: 13, color: AppColors.orange),
+                      decoration: const BoxDecoration(
+                        color: Colors.white,
+                        shape: BoxShape.circle,
+                      ),
+                      child: const Icon(
+                        Icons.thumb_up_rounded,
+                        size: 13,
+                        color: AppColors.orange,
+                      ),
                     ),
                   ),
                 ],
@@ -352,12 +488,24 @@ class _RecipeCard extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(title,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: AppColors.ink)),
+                  Text(
+                    title,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
+                      color: AppColors.ink,
+                    ),
+                  ),
                   const SizedBox(height: 2),
-                  Text(subtitle, style: const TextStyle(fontSize: 11, color: AppColors.muted)),
+                  Text(
+                    subtitle,
+                    style: const TextStyle(
+                      fontSize: 11,
+                      color: AppColors.muted,
+                    ),
+                  ),
                 ],
               ),
             ),
