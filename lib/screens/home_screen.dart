@@ -6,12 +6,12 @@ import '../theme/app_theme.dart';
 import 'chatbot_screen.dart';
 import 'recipe_detail_screen.dart';
 
-/// Kalau nama file foto tidak sama dengan judul resep, tulis di sini.
-/// Format: 'judul_resep_huruf_kecil_pakai_underscore': 'nama_file_tanpa_.jpg'
-/// Contoh: judul "Tumis Kangkung" -> file "tumis_kankung.jpg".
 const Map<String, String> _imageAliases = {
   'tumis_kangkung': 'tumis_kankung',
 };
+
+/// ID khusus untuk kategori "Favorit" (bukan kategori dari data resep).
+const String _favoriteId = '__favorit__';
 
 /// Membuat path foto otomatis dari judul resep.
 /// "Nasi Goreng Spesial" -> assets/images/nasi_goreng_spesial.jpg
@@ -36,7 +36,7 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-  String? _activeCategoryId; // null = "Semua"
+  String? _activeCategoryId; // null = "Semua", _favoriteId = "Favorit"
   final _searchController = TextEditingController();
   String _query = '';
 
@@ -55,151 +55,173 @@ class _HomeScreenState extends State<HomeScreen> {
       {'label': 'Camilan', 'icon': Icons.icecream_rounded, 'image': 'assets/images/cemilan.jpg'},
     ];
 
-    final byCategory = _activeCategoryId == null
-        ? dummyRecipes
-        : dummyRecipes.where((r) => r.categoryId == _activeCategoryId).toList();
+    // AnimatedBuilder: halaman otomatis diperbarui saat favorit berubah.
+    return AnimatedBuilder(
+      animation: appState,
+      builder: (context, _) {
+        final isFavoriteTab = _activeCategoryId == _favoriteId;
 
-    final query = _query.trim().toLowerCase();
-    final filteredRecipes = query.isEmpty
-        ? byCategory
-        : byCategory.where((r) {
-      final inTitle = r.title.toLowerCase().contains(query);
-      final inIngredients =
-      r.ingredients.any((ing) => ing.name.toLowerCase().contains(query));
-      return inTitle || inIngredients;
-    }).toList();
+        final byCategory = _activeCategoryId == null
+            ? dummyRecipes
+            : isFavoriteTab
+            ? dummyRecipes.where((r) => appState.isBookmarked(r.id)).toList()
+            : dummyRecipes.where((r) => r.categoryId == _activeCategoryId).toList();
 
-    return ListView(
-      padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
-      children: [
-        Row(
+        final query = _query.trim().toLowerCase();
+        final filteredRecipes = query.isEmpty
+            ? byCategory
+            : byCategory.where((r) {
+          final inTitle = r.title.toLowerCase().contains(query);
+          final inIngredients =
+          r.ingredients.any((ing) => ing.name.toLowerCase().contains(query));
+          return inTitle || inIngredients;
+        }).toList();
+
+        return ListView(
+          padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
           children: [
-            Container(
-              width: 52,
-              height: 52,
-              decoration: const BoxDecoration(color: AppColors.orangeLight, shape: BoxShape.circle),
-              child: ClipOval(
-                child: Image.asset('assets/images/profile.jpg', fit: BoxFit.cover),
-              ),
-            ),
-            const SizedBox(width: 12),
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+            Row(
               children: [
-                const Text('Hallo,',
-                    style: TextStyle(fontSize: 13, color: AppColors.orange, fontWeight: FontWeight.w600)),
-                AnimatedBuilder(
-                  animation: appState,
-                  builder: (context, _) => Text(appState.userName,
-                      style: Theme.of(context)
-                          .textTheme
-                          .headlineMedium
-                          ?.copyWith(fontSize: 17, color: AppColors.orange)),
+                Container(
+                  width: 52,
+                  height: 52,
+                  decoration: const BoxDecoration(color: AppColors.orangeLight, shape: BoxShape.circle),
+                  child: ClipOval(
+                    child: Image.asset('assets/images/profile.jpg', fit: BoxFit.cover),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text('Hallo,',
+                        style: TextStyle(fontSize: 13, color: AppColors.orange, fontWeight: FontWeight.w600)),
+                    Text(appState.userName,
+                        style: Theme.of(context)
+                            .textTheme
+                            .headlineMedium
+                            ?.copyWith(fontSize: 17, color: AppColors.orange)),
+                  ],
                 ),
               ],
             ),
-          ],
-        ),
-        const SizedBox(height: 16),
-        Container(
-          height: 46,
-          padding: const EdgeInsets.symmetric(horizontal: 14),
-          decoration: BoxDecoration(color: AppColors.orangeLight, borderRadius: BorderRadius.circular(14)),
-          child: Row(children: [
-            const Icon(Icons.search_rounded, size: 18, color: AppColors.orange),
-            const SizedBox(width: 8),
-            Expanded(
-              child: TextField(
-                controller: _searchController,
-                onChanged: (v) => setState(() => _query = v),
-                style: const TextStyle(fontSize: 12.5, color: AppColors.ink),
-                decoration: const InputDecoration(
-                  isDense: true,
-                  border: InputBorder.none,
-                  hintText: 'Cari resep, bahan, atau makanan',
-                  hintStyle: TextStyle(fontSize: 12.5, color: AppColors.muted),
+            const SizedBox(height: 16),
+            Container(
+              height: 46,
+              padding: const EdgeInsets.symmetric(horizontal: 14),
+              decoration: BoxDecoration(color: AppColors.orangeLight, borderRadius: BorderRadius.circular(14)),
+              child: Row(children: [
+                const Icon(Icons.search_rounded, size: 18, color: AppColors.orange),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: TextField(
+                    controller: _searchController,
+                    onChanged: (v) => setState(() => _query = v),
+                    style: const TextStyle(fontSize: 12.5, color: AppColors.ink),
+                    decoration: const InputDecoration(
+                      isDense: true,
+                      border: InputBorder.none,
+                      hintText: 'Cari resep, bahan, atau makanan',
+                      hintStyle: TextStyle(fontSize: 12.5, color: AppColors.muted),
+                    ),
+                  ),
                 ),
+                if (_query.isNotEmpty)
+                  InkWell(
+                    onTap: () => setState(() {
+                      _searchController.clear();
+                      _query = '';
+                    }),
+                    child: const Icon(Icons.close_rounded, size: 16, color: AppColors.muted),
+                  ),
+              ]),
+            ),
+            const SizedBox(height: 22),
+            Text('Rencana Menu Hari Ini',
+                style: Theme.of(context).textTheme.headlineMedium?.copyWith(fontSize: 16, color: AppColors.orange)),
+            const SizedBox(height: 12),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: mealTypes
+                  .map((m) => _MealTypeAvatar(
+                label: m['label'] as String,
+                icon: m['icon'] as IconData,
+                image: m['image'] as String,
+                onTap: widget.onNavigateToCalendar,
+              ))
+                  .toList(),
+            ),
+            const SizedBox(height: 18),
+            _AssistantBanner(
+              onTap: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const ChatbotScreen())),
+            ),
+            const SizedBox(height: 22),
+            Text('Kategori',
+                style: Theme.of(context).textTheme.headlineMedium?.copyWith(fontSize: 16, color: AppColors.orange)),
+            const SizedBox(height: 10),
+            SizedBox(
+              height: 34,
+              child: ListView(
+                scrollDirection: Axis.horizontal,
+                children: [
+                  _CategoryChip(
+                    label: 'Semua',
+                    active: _activeCategoryId == null,
+                    onTap: () => setState(() => _activeCategoryId = null),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.only(left: 8),
+                    child: _CategoryChip(
+                      label: 'Favorit',
+                      active: isFavoriteTab,
+                      onTap: () => setState(() => _activeCategoryId = _favoriteId),
+                    ),
+                  ),
+                  ...categories.map((c) => Padding(
+                    padding: const EdgeInsets.only(left: 8),
+                    child: _CategoryChip(
+                      label: c.name,
+                      active: _activeCategoryId == c.id,
+                      onTap: () => setState(() => _activeCategoryId = c.id),
+                    ),
+                  )),
+                ],
               ),
             ),
-            if (_query.isNotEmpty)
-              InkWell(
-                onTap: () => setState(() {
-                  _searchController.clear();
-                  _query = '';
-                }),
-                child: const Icon(Icons.close_rounded, size: 16, color: AppColors.muted),
-              ),
-          ]),
-        ),
-        const SizedBox(height: 22),
-        Text('Rencana Menu Hari Ini',
-            style: Theme.of(context).textTheme.headlineMedium?.copyWith(fontSize: 16, color: AppColors.orange)),
-        const SizedBox(height: 12),
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: mealTypes
-              .map((m) => _MealTypeAvatar(
-            label: m['label'] as String,
-            icon: m['icon'] as IconData,
-            image: m['image'] as String,
-            onTap: widget.onNavigateToCalendar,
-          ))
-              .toList(),
-        ),
-        const SizedBox(height: 18),
-        _AssistantBanner(
-          onTap: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const ChatbotScreen())),
-        ),
-        const SizedBox(height: 22),
-        Text('Kategori',
-            style: Theme.of(context).textTheme.headlineMedium?.copyWith(fontSize: 16, color: AppColors.orange)),
-        const SizedBox(height: 10),
-        SizedBox(
-          height: 34,
-          child: ListView(
-            scrollDirection: Axis.horizontal,
-            children: [
-              _CategoryChip(
-                label: 'Semua',
-                active: _activeCategoryId == null,
-                onTap: () => setState(() => _activeCategoryId = null),
-              ),
-              ...categories.map((c) => Padding(
-                padding: const EdgeInsets.only(left: 8),
-                child: _CategoryChip(
-                  label: c.name,
-                  active: _activeCategoryId == c.id,
-                  onTap: () => setState(() => _activeCategoryId = c.id),
+            const SizedBox(height: 16),
+            if (filteredRecipes.isEmpty)
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 12),
+                child: Text(
+                  isFavoriteTab && query.isEmpty
+                      ? 'Belum ada resep favorit. Tekan ikon jempol di kartu resep untuk menambahkannya.'
+                      : 'Belum ada resep di kategori ini.',
+                  style: const TextStyle(fontSize: 13, color: AppColors.muted),
                 ),
-              )),
-            ],
-          ),
-        ),
-        const SizedBox(height: 16),
-        if (filteredRecipes.isEmpty)
-          const Padding(
-            padding: EdgeInsets.symmetric(vertical: 12),
-            child: Text('Belum ada resep di kategori ini.', style: TextStyle(fontSize: 13, color: AppColors.muted)),
-          )
-        else
-          GridView.count(
-            crossAxisCount: 2,
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            mainAxisSpacing: 12,
-            crossAxisSpacing: 12,
-            childAspectRatio: 0.8,
-            children: filteredRecipes
-                .map((r) => _RecipeCard(
-              title: r.title,
-              subtitle: r.subtitle,
-              image: _recipeImagePath(r.title),
-              onTap: () => Navigator.of(context)
-                  .push(MaterialPageRoute(builder: (_) => RecipeDetailScreen(recipe: r))),
-            ))
-                .toList(),
-          ),
-      ],
+              )
+            else
+              GridView.count(
+                crossAxisCount: 2,
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                mainAxisSpacing: 12,
+                crossAxisSpacing: 12,
+                childAspectRatio: 0.8,
+                children: filteredRecipes
+                    .map((r) => _RecipeCard(
+                  title: r.title,
+                  subtitle: r.subtitle,
+                  image: _recipeImagePath(r.title),
+                  isFavorite: appState.isBookmarked(r.id),
+                  onFavoriteTap: () => appState.toggleBookmark(r.id),
+                  onTap: () => Navigator.of(context)
+                      .push(MaterialPageRoute(builder: (_) => RecipeDetailScreen(recipe: r))),
+                ))
+                    .toList(),
+              ),
+          ],
+        );
+      },
     );
   }
 }
@@ -298,13 +320,22 @@ class _AssistantBanner extends StatelessWidget {
   }
 }
 
-/// Kartu resep dengan foto di bagian atas.
-/// Kalau file foto tidak ditemukan, otomatis tampil ikon placeholder.
+/// Kartu resep dengan foto di bagian atas dan tombol favorit (jempol).
+/// Jempol abu-abu = belum favorit, orange = sudah favorit.
 class _RecipeCard extends StatelessWidget {
-  const _RecipeCard({required this.title, required this.subtitle, required this.image, required this.onTap});
+  const _RecipeCard({
+    required this.title,
+    required this.subtitle,
+    required this.image,
+    required this.isFavorite,
+    required this.onFavoriteTap,
+    required this.onTap,
+  });
   final String title;
   final String subtitle;
   final String image;
+  final bool isFavorite;
+  final VoidCallback onFavoriteTap;
   final VoidCallback onTap;
 
   @override
@@ -335,13 +366,21 @@ class _RecipeCard extends StatelessWidget {
                     ),
                   ),
                   Positioned(
-                    top: 8,
-                    left: 8,
-                    child: Container(
-                      width: 24,
-                      height: 24,
-                      decoration: const BoxDecoration(color: Colors.white, shape: BoxShape.circle),
-                      child: const Icon(Icons.thumb_up_rounded, size: 13, color: AppColors.orange),
+                    top: 6,
+                    left: 6,
+                    child: InkWell(
+                      onTap: onFavoriteTap,
+                      customBorder: const CircleBorder(),
+                      child: Container(
+                        width: 30,
+                        height: 30,
+                        decoration: const BoxDecoration(color: Colors.white, shape: BoxShape.circle),
+                        child: Icon(
+                          Icons.thumb_up_rounded,
+                          size: 15,
+                          color: isFavorite ? AppColors.orange : AppColors.muted,
+                        ),
+                      ),
                     ),
                   ),
                 ],

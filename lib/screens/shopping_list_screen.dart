@@ -22,7 +22,14 @@ class _ShoppingListScreenState extends State<ShoppingListScreen> {
       context: context,
       builder: (context) => StatefulBuilder(
         builder: (context, setDialogState) => AlertDialog(
-          backgroundColor: AppColors.cream,
+          // Pop up berwarna orange terang
+          backgroundColor: AppColors.orange,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+          titleTextStyle: const TextStyle(
+            fontSize: 18,
+            fontWeight: FontWeight.w700,
+            color: Colors.white,
+          ),
           title: Text(existing == null ? 'Tambah Item' : 'Edit Item'),
           content: Column(
             mainAxisSize: MainAxisSize.min,
@@ -38,13 +45,24 @@ class _ShoppingListScreenState extends State<ShoppingListScreen> {
               ),
               if (error != null) ...[
                 const SizedBox(height: 8),
-                Text(error!, style: const TextStyle(fontSize: 12, color: AppColors.red)),
+                Text(
+                  error!,
+                  style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Colors.white),
+                ),
               ],
             ],
           ),
           actions: [
-            TextButton(onPressed: () => Navigator.of(context).pop(), child: const Text('Batal')),
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              style: TextButton.styleFrom(foregroundColor: Colors.white),
+              child: const Text('Batal'),
+            ),
             ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.white,
+                foregroundColor: AppColors.orange,
+              ),
               onPressed: () {
                 final name = nameController.text.trim();
                 final amount = amountController.text.trim();
@@ -124,33 +142,33 @@ class _ShoppingListScreenState extends State<ShoppingListScreen> {
             )
           else
             ...unbought.map((i) => _ShoppingRow(
-                  item: i,
-                  onToggle: () {
-                    appState.toggleShoppingItem(i.id);
-                    setState(() {});
-                  },
-                  onEdit: () => _openForm(existing: i),
-                  onDelete: () {
-                    appState.deleteShoppingItem(i.id);
-                    setState(() {});
-                  },
-                )),
+              item: i,
+              onToggle: () {
+                appState.toggleShoppingItem(i.id);
+                setState(() {});
+              },
+              onEdit: () => _openForm(existing: i),
+              onDelete: () {
+                appState.deleteShoppingItem(i.id);
+                setState(() {});
+              },
+            )),
           const SizedBox(height: 16),
           Text('Sudah dibeli (${bought.length})',
               style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: AppColors.muted)),
           const SizedBox(height: 8),
           ...bought.map((i) => _ShoppingRow(
-                item: i,
-                onToggle: () {
-                  appState.toggleShoppingItem(i.id);
-                  setState(() {});
-                },
-                onEdit: () => _openForm(existing: i),
-                onDelete: () {
-                  appState.deleteShoppingItem(i.id);
-                  setState(() {});
-                },
-              )),
+            item: i,
+            onToggle: () {
+              appState.toggleShoppingItem(i.id);
+              setState(() {});
+            },
+            onEdit: () => _openForm(existing: i),
+            onDelete: () {
+              appState.deleteShoppingItem(i.id);
+              setState(() {});
+            },
+          )),
         ],
       ),
       floatingActionButton: FloatingActionButton(

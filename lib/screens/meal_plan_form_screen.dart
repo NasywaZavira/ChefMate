@@ -27,6 +27,9 @@ class MealPlanFormScreen extends StatefulWidget {
 class _MealPlanFormScreenState extends State<MealPlanFormScreen> {
   static const mealTypes = ['Sarapan', 'Makan Siang', 'Makan Malam', 'Camilan'];
 
+  // Gaya tulisan label (Tanggal, Jenis Makan, Pilih Resep): orange.
+  static const _labelStyle = TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: AppColors.orange);
+
   late String _mealType;
   late String? _recipeId;
   String? _error;
@@ -66,13 +69,16 @@ class _MealPlanFormScreenState extends State<MealPlanFormScreen> {
       appBar: AppBar(
         backgroundColor: AppColors.cream,
         elevation: 0,
-        foregroundColor: AppColors.ink,
-        title: Text(_isEditing ? 'Edit Rencana Makan' : 'Tambah Rencana Makan'),
+        foregroundColor: AppColors.orange,
+        title: Text(
+          _isEditing ? 'Edit Rencana Makan' : 'Tambah Rencana Makan',
+          style: const TextStyle(color: AppColors.orange, fontWeight: FontWeight.w700),
+        ),
       ),
       body: ListView(
         padding: const EdgeInsets.fromLTRB(20, 8, 20, 24),
         children: [
-          Text('Tanggal', style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: AppColors.ink)),
+          const Text('Tanggal', style: _labelStyle),
           const SizedBox(height: 6),
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
@@ -84,7 +90,7 @@ class _MealPlanFormScreenState extends State<MealPlanFormScreen> {
             child: Text(widget.date, style: const TextStyle(fontSize: 13, color: AppColors.muted)),
           ),
           const SizedBox(height: 18),
-          const Text('Jenis Makan', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: AppColors.ink)),
+          const Text('Jenis Makan', style: _labelStyle),
           const SizedBox(height: 8),
           Wrap(
             spacing: 8,
@@ -97,13 +103,14 @@ class _MealPlanFormScreenState extends State<MealPlanFormScreen> {
                 onSelected: (_) => setState(() => _mealType = m),
                 selectedColor: AppColors.orange,
                 backgroundColor: Colors.white,
-                labelStyle: TextStyle(fontSize: 12, color: active ? Colors.white : AppColors.ink),
+                // Belum dipilih: abu-abu (sama seperti "Pilih resep..."). Sudah dipilih: putih di atas orange.
+                labelStyle: TextStyle(fontSize: 12, color: active ? Colors.white : AppColors.muted),
                 side: BorderSide(color: active ? AppColors.orange : AppColors.line),
               );
             }).toList(),
           ),
           const SizedBox(height: 18),
-          const Text('Pilih Resep', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: AppColors.ink)),
+          const Text('Pilih Resep', style: _labelStyle),
           const SizedBox(height: 8),
           Container(
             decoration: BoxDecoration(
@@ -122,12 +129,12 @@ class _MealPlanFormScreenState extends State<MealPlanFormScreen> {
                 ),
                 items: dummyRecipes
                     .map((r) => DropdownMenuItem(
-                          value: r.id,
-                          child: Padding(
-                            padding: const EdgeInsets.symmetric(vertical: 10),
-                            child: Text(r.title, style: const TextStyle(fontSize: 13, color: AppColors.ink)),
-                          ),
-                        ))
+                  value: r.id,
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 10),
+                    child: Text(r.title, style: const TextStyle(fontSize: 13, color: AppColors.ink)),
+                  ),
+                ))
                     .toList(),
                 onChanged: (value) => setState(() {
                   _recipeId = value;

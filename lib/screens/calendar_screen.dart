@@ -6,15 +6,10 @@ import '../state/app_state.dart';
 import '../theme/app_theme.dart';
 import 'meal_plan_form_screen.dart';
 
-/// Kalau nama file foto tidak sama dengan judul resep, tulis di sini.
-/// Format: 'judul_resep_huruf_kecil_pakai_underscore': 'nama_file_tanpa_.jpg'
-/// Harus sama dengan daftar di home_screen.dart dan recipe_detail_screen.dart.
 const Map<String, String> _imageAliases = {
   'tumis_kangkung': 'tumis_kankung',
 };
 
-/// Membuat path foto otomatis dari judul resep.
-/// "Soto Ayam Bening" -> assets/images/soto_ayam_bening.jpg
 String _recipeImagePath(String title) {
   final slug = title
       .toLowerCase()

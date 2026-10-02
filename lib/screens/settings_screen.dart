@@ -48,7 +48,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     if (confirmed == true && mounted) {
       Navigator.of(context).pushAndRemoveUntil(
         MaterialPageRoute(builder: (_) => const LandingPage()),
-        (route) => false,
+            (route) => false,
       );
     }
   }
@@ -104,11 +104,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
             SwitchListTile(
               contentPadding: EdgeInsets.zero,
               title: const Text(
-                'Promo dan update',
+                'Update',
                 style: TextStyle(fontSize: 14, color: AppColors.ink),
               ),
               subtitle: const Text(
-                'Info produk terbaru',
+                'Info terbaru dan resep terbaru',
                 style: TextStyle(fontSize: 12, color: AppColors.muted),
               ),
               value: appState.notifyPromo,
