@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../state/app_state.dart';
 import '../theme/app_theme.dart';
+import 'login_screen.dart';
 import 'main_shell.dart';
 
 /// Halaman Register ("Join Us!").
@@ -248,8 +249,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.w600, color: AppColors.orange),
                   ),
                   InkWell(
-                    // Belum ada halaman Login, jadi kembali ke halaman sebelumnya (Landing).
-                    onTap: () => Navigator.of(context).maybePop(),
+                    onTap: () => Navigator.of(context).pushReplacement(
+                      MaterialPageRoute(builder: (_) => const LoginScreen()),
+                    ),
                     child: const Text(
                       'Login Now',
                       style: TextStyle(

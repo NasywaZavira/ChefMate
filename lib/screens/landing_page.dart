@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../theme/app_theme.dart';
-import 'main_shell.dart';
+import 'login_screen.dart';
 import 'register_screen.dart';
 
 class LandingPage extends StatelessWidget {
@@ -28,7 +28,7 @@ class LandingPage extends StatelessWidget {
               const SizedBox(height: 12),
               Text(
                 'Rencanakan meal plan mingguan, temukan resep sesuai bahan '
-                'yang kamu punya, dan biarkan daftar belanja tersusun sendiri.',
+                    'yang kamu punya, dan biarkan daftar belanja tersusun sendiri.',
                 style: textTheme.bodyLarge?.copyWith(color: AppColors.muted),
               ),
               const Spacer(),
@@ -59,7 +59,7 @@ class LandingPage extends StatelessWidget {
               OutlinedButton(
                 onPressed: () {
                   Navigator.of(context).push(
-                    MaterialPageRoute(builder: (_) => const MainShell()),
+                    MaterialPageRoute(builder: (_) => const LoginScreen()),
                   );
                 },
                 child: const Text('Sudah punya akun? Masuk'),
