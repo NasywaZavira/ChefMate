@@ -3,25 +3,8 @@ import 'package:flutter/material.dart';
 import '../models/recipe.dart';
 import '../state/app_state.dart';
 import '../theme/app_theme.dart';
+import '../widgets/recipe_image.dart';
 import 'chatbot_screen.dart';
-
-/// Kalau nama file foto tidak sama dengan judul resep, tulis di sini.
-/// Format: 'judul_resep_huruf_kecil_pakai_underscore': 'nama_file_tanpa_.jpg'
-/// Harus sama dengan daftar di home_screen.dart.
-const Map<String, String> _imageAliases = {
-  'tumis_kangkung': 'tumis_kankung',
-};
-
-/// Membuat path foto otomatis dari judul resep.
-/// "Nasi Goreng Spesial" -> assets/images/nasi_goreng_spesial.jpg
-String _recipeImagePath(String title) {
-  final slug = title
-      .toLowerCase()
-      .replaceAll(RegExp(r'[^a-z0-9]+'), '_')
-      .replaceAll(RegExp(r'^_+|_+$'), '');
-  final file = _imageAliases[slug] ?? slug;
-  return 'assets/images/$file.jpg';
-}
 
 class RecipeDetailScreen extends StatefulWidget {
   const RecipeDetailScreen({super.key, required this.recipe});
@@ -51,13 +34,10 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
               SizedBox(
                 height: 220,
                 width: double.infinity,
-                child: Image.asset(
-                  _recipeImagePath(recipe.title),
+                child: RecipeImage(
+                  recipeTitle: recipe.title,
                   fit: BoxFit.cover,
-                  errorBuilder: (context, error, stackTrace) => Container(
-                    color: AppColors.orangeLight,
-                    child: const Icon(Icons.image_outlined, color: AppColors.orange, size: 40),
-                  ),
+                  placeholderIconSize: 40,
                 ),
               ),
               Positioned(
@@ -76,15 +56,19 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
                   builder: (context, _) {
                     final saved = appState.isBookmarked(recipe.id);
                     return _RoundIconButton(
-                      icon: saved ? Icons.bookmark_rounded : Icons.bookmark_border_rounded,
+                      icon: saved
+                          ? Icons.bookmark_rounded
+                          : Icons.bookmark_border_rounded,
                       iconColor: saved ? AppColors.orange : AppColors.ink,
                       onTap: () {
                         appState.toggleBookmark(recipe.id);
                         ScaffoldMessenger.of(context).showSnackBar(
                           SnackBar(
-                            content: Text(saved
-                                ? 'Dihapus dari resep favorit.'
-                                : 'Disimpan ke resep favorit.'),
+                            content: Text(
+                              saved
+                                  ? 'Dihapus dari resep favorit.'
+                                  : 'Disimpan ke resep favorit.',
+                            ),
                             duration: const Duration(seconds: 1),
                           ),
                         );
@@ -100,68 +84,126 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(recipe.title,
-                    style: Theme.of(context).textTheme.displayLarge?.copyWith(fontSize: 22)),
+                Text(
+                  recipe.title,
+                  style: Theme.of(context).textTheme.displayLarge
+                      ?.copyWith(fontSize: 22),
+                ),
                 const SizedBox(height: 10),
-                Row(children: [
-                  _InfoChip(icon: Icons.access_time_rounded, label: recipe.time),
-                  const SizedBox(width: 10),
-                  _InfoChip(icon: Icons.local_fire_department_rounded, label: recipe.difficulty),
-                ]),
+                Row(
+                  children: [
+                    _InfoChip(
+                      icon: Icons.access_time_rounded,
+                      label: recipe.time,
+                    ),
+                    const SizedBox(width: 10),
+                    _InfoChip(
+                      icon: Icons.local_fire_department_rounded,
+                      label: recipe.difficulty,
+                    ),
+                  ],
+                ),
                 const SizedBox(height: 20),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    const Text('Porsi',
-                        style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: AppColors.ink)),
-                    Row(children: [
-                      _StepperButton(
-                        icon: Icons.remove_rounded,
-                        onTap: () {
-                          if (_servings > 1) setState(() => _servings--);
-                        },
+                    const Text(
+                      'Porsi',
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                        color: AppColors.ink,
                       ),
-                      Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 14),
-                        child: Text('$_servings',
+                    ),
+                    Row(
+                      children: [
+                        _StepperButton(
+                          icon: Icons.remove_rounded,
+                          onTap: () {
+                            if (_servings > 1) setState(() => _servings--);
+                          },
+                        ),
+                        Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 14),
+                          child: Text(
+                            '$_servings',
                             style: const TextStyle(
-                                fontSize: 14, fontWeight: FontWeight.w600, color: AppColors.ink)),
-                      ),
-                      _StepperButton(icon: Icons.add_rounded, onTap: () => setState(() => _servings++)),
-                    ]),
+                              fontSize: 14,
+                              fontWeight: FontWeight.w600,
+                              color: AppColors.ink,
+                            ),
+                          ),
+                        ),
+                        _StepperButton(
+                          icon: Icons.add_rounded,
+                          onTap: () => setState(() => _servings++),
+                        ),
+                      ],
+                    ),
                   ],
                 ),
                 const SizedBox(height: 20),
-                const Text('Bahan',
-                    style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600, color: AppColors.ink)),
+                const Text(
+                  'Bahan',
+                  style: TextStyle(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.ink,
+                  ),
+                ),
                 const SizedBox(height: 10),
-                ...recipe.ingredients.map((ing) => _IngredientRow(ingredient: ing, scale: scale)),
+                ...recipe.ingredients.map(
+                  (ing) => _IngredientRow(ingredient: ing, scale: scale),
+                ),
                 const SizedBox(height: 20),
-                const Text('Peralatan',
-                    style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600, color: AppColors.ink)),
+                const Text(
+                  'Peralatan',
+                  style: TextStyle(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.ink,
+                  ),
+                ),
                 const SizedBox(height: 10),
                 Wrap(
                   spacing: 8,
                   runSpacing: 8,
                   children: recipe.equipment
-                      .map((e) => Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(20),
-                      border: Border.all(color: AppColors.line),
-                    ),
-                    child: Text(e, style: const TextStyle(fontSize: 12, color: AppColors.ink)),
-                  ))
+                      .map(
+                        (e) => Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 8,
+                          ),
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(20),
+                            border: Border.all(color: AppColors.line),
+                          ),
+                          child: Text(
+                            e,
+                            style: const TextStyle(
+                              fontSize: 12,
+                              color: AppColors.ink,
+                            ),
+                          ),
+                        ),
+                      )
                       .toList(),
                 ),
                 const SizedBox(height: 20),
-                const Text('Langkah',
-                    style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600, color: AppColors.ink)),
+                const Text(
+                  'Langkah',
+                  style: TextStyle(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.ink,
+                  ),
+                ),
                 const SizedBox(height: 10),
                 ...List.generate(
                   recipe.steps.length,
-                      (i) => _StepRow(number: i + 1, text: recipe.steps[i]),
+                  (i) => _StepRow(number: i + 1, text: recipe.steps[i]),
                 ),
                 const SizedBox(height: 24),
                 SizedBox(
@@ -169,7 +211,9 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
                   child: ElevatedButton(
                     onPressed: () {
                       Navigator.of(context).push(
-                        MaterialPageRoute(builder: (_) => const ChatbotScreen()),
+                        MaterialPageRoute(
+                          builder: (_) => const ChatbotScreen(),
+                        ),
                       );
                     },
                     child: const Text('Bingung? Tanya ChatBot'),
@@ -193,8 +237,9 @@ String _scaledAmount(String amount, double scale) {
   if (value == null) return amount;
   final rest = match.group(2) ?? '';
   final scaled = value * scale;
-  final formatted =
-  scaled == scaled.roundToDouble() ? scaled.toStringAsFixed(0) : scaled.toStringAsFixed(1);
+  final formatted = scaled == scaled.roundToDouble()
+      ? scaled.toStringAsFixed(0)
+      : scaled.toStringAsFixed(1);
   return '$formatted $rest'.trim();
 }
 
@@ -215,17 +260,32 @@ class _IngredientRow extends StatelessWidget {
         borderRadius: BorderRadius.circular(12),
         border: Border.all(color: missing ? AppColors.red : AppColors.line),
       ),
-      child: Row(children: [
-        Icon(missing ? Icons.close_rounded : Icons.check_rounded,
-            size: 16, color: missing ? AppColors.red : AppColors.green),
-        const SizedBox(width: 10),
-        Expanded(
-          child: Text(ingredient.name,
-              style: TextStyle(fontSize: 13, color: missing ? AppColors.red : AppColors.ink)),
-        ),
-        Text(_scaledAmount(ingredient.amount, scale),
-            style: TextStyle(fontSize: 12, color: missing ? AppColors.red : AppColors.muted)),
-      ]),
+      child: Row(
+        children: [
+          Icon(
+            missing ? Icons.close_rounded : Icons.check_rounded,
+            size: 16,
+            color: missing ? AppColors.red : AppColors.green,
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Text(
+              ingredient.name,
+              style: TextStyle(
+                fontSize: 13,
+                color: missing ? AppColors.red : AppColors.ink,
+              ),
+            ),
+          ),
+          Text(
+            _scaledAmount(ingredient.amount, scale),
+            style: TextStyle(
+              fontSize: 12,
+              color: missing ? AppColors.red : AppColors.muted,
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
@@ -247,13 +307,29 @@ class _StepRow extends StatelessWidget {
             width: 22,
             height: 22,
             alignment: Alignment.center,
-            decoration: const BoxDecoration(color: AppColors.orange, shape: BoxShape.circle),
-            child: Text('$number',
-                style: const TextStyle(fontSize: 11, color: Colors.white, fontWeight: FontWeight.w600)),
+            decoration: const BoxDecoration(
+              color: AppColors.orange,
+              shape: BoxShape.circle,
+            ),
+            child: Text(
+              '$number',
+              style: const TextStyle(
+                fontSize: 11,
+                color: Colors.white,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
           ),
           const SizedBox(width: 10),
           Expanded(
-            child: Text(text, style: const TextStyle(fontSize: 13, color: AppColors.ink, height: 1.4)),
+            child: Text(
+              text,
+              style: const TextStyle(
+                fontSize: 13,
+                color: AppColors.ink,
+                height: 1.4,
+              ),
+            ),
           ),
         ],
       ),
@@ -276,11 +352,17 @@ class _InfoChip extends StatelessWidget {
         borderRadius: BorderRadius.circular(20),
         border: Border.all(color: AppColors.line),
       ),
-      child: Row(mainAxisSize: MainAxisSize.min, children: [
-        Icon(icon, size: 14, color: AppColors.muted),
-        const SizedBox(width: 4),
-        Text(label, style: const TextStyle(fontSize: 12, color: AppColors.muted)),
-      ]),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 14, color: AppColors.muted),
+          const SizedBox(width: 4),
+          Text(
+            label,
+            style: const TextStyle(fontSize: 12, color: AppColors.muted),
+          ),
+        ],
+      ),
     );
   }
 }
@@ -300,7 +382,10 @@ class _RoundIconButton extends StatelessWidget {
       child: Container(
         width: 36,
         height: 36,
-        decoration: const BoxDecoration(color: Colors.white, shape: BoxShape.circle),
+        decoration: const BoxDecoration(
+          color: Colors.white,
+          shape: BoxShape.circle,
+        ),
         child: Icon(icon, size: 18, color: iconColor ?? AppColors.ink),
       ),
     );
@@ -321,7 +406,10 @@ class _StepperButton extends StatelessWidget {
       child: Container(
         width: 28,
         height: 28,
-        decoration: const BoxDecoration(color: AppColors.orangeLight, shape: BoxShape.circle),
+        decoration: const BoxDecoration(
+          color: AppColors.orangeLight,
+          shape: BoxShape.circle,
+        ),
         child: Icon(icon, size: 16, color: AppColors.orange),
       ),
     );
