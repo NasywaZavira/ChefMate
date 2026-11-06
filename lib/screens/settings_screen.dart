@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import '../state/app_state.dart';
 import '../theme/app_theme.dart';
 import 'landing_page.dart';
-import 'profile_screen.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -19,9 +18,15 @@ class _SettingsScreenState extends State<SettingsScreen> {
       builder: (context) => AlertDialog(
         backgroundColor: AppColors.cream,
         title: Text(title),
-        content: Text(message, style: const TextStyle(fontSize: 13, color: AppColors.ink)),
+        content: Text(
+          message,
+          style: const TextStyle(fontSize: 13, color: AppColors.ink),
+        ),
         actions: [
-          TextButton(onPressed: () => Navigator.of(context).pop(), child: const Text('Tutup')),
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('Tutup'),
+          ),
         ],
       ),
     );
@@ -33,10 +38,15 @@ class _SettingsScreenState extends State<SettingsScreen> {
       builder: (context) => AlertDialog(
         backgroundColor: AppColors.cream,
         title: const Text('Keluar'),
-        content: const Text('Yakin ingin keluar dari akun ini?',
-            style: TextStyle(fontSize: 13, color: AppColors.ink)),
+        content: const Text(
+          'Yakin ingin keluar dari akun ini?',
+          style: TextStyle(fontSize: 13, color: AppColors.ink),
+        ),
         actions: [
-          TextButton(onPressed: () => Navigator.of(context).pop(false), child: const Text('Batal')),
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text('Batal'),
+          ),
           TextButton(
             onPressed: () => Navigator.of(context).pop(true),
             child: const Text('Keluar', style: TextStyle(color: AppColors.red)),
@@ -48,7 +58,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     if (confirmed == true && mounted) {
       Navigator.of(context).pushAndRemoveUntil(
         MaterialPageRoute(builder: (_) => const LandingPage()),
-            (route) => false,
+        (route) => false,
       );
     }
   }
@@ -68,24 +78,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
         builder: (context, _) => ListView(
           padding: const EdgeInsets.fromLTRB(20, 12, 20, 24),
           children: [
-            _SectionTitle('Akun'),
-            _SettingsTile(
-              icon: Icons.person_outline_rounded,
-              title: 'Profil Saya',
-              subtitle: 'Kelola nama, email, dan preferensi',
-              onTap: () => Navigator.of(context)
-                  .push(MaterialPageRoute(builder: (_) => const ProfileScreen())),
-            ),
-            _SettingsTile(
-              icon: Icons.lock_outline_rounded,
-              title: 'Keamanan',
-              subtitle: 'Atur kata sandi dan privasi',
-              onTap: () => _showInfoDialog(
-                'Keamanan',
-                'Pengaturan kata sandi dan privasi belum tersedia di versi ini.',
-              ),
-            ),
-            const SizedBox(height: 18),
             _SectionTitle('Notifikasi'),
             SwitchListTile(
               contentPadding: EdgeInsets.zero,
@@ -100,20 +92,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
               value: appState.notifyReminder,
               activeThumbColor: AppColors.orange,
               onChanged: (v) => appState.setNotifyReminder(v),
-            ),
-            SwitchListTile(
-              contentPadding: EdgeInsets.zero,
-              title: const Text(
-                'Update',
-                style: TextStyle(fontSize: 14, color: AppColors.ink),
-              ),
-              subtitle: const Text(
-                'Info terbaru dan resep terbaru',
-                style: TextStyle(fontSize: 12, color: AppColors.muted),
-              ),
-              value: appState.notifyPromo,
-              activeThumbColor: AppColors.orange,
-              onChanged: (v) => appState.setNotifyPromo(v),
             ),
             const SizedBox(height: 18),
             _SectionTitle('Lainnya'),
@@ -180,38 +158,41 @@ class _SettingsTile extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       margin: const EdgeInsets.only(bottom: 10),
-      decoration: BoxDecoration(
+      child: Material(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: AppColors.line),
-      ),
-      child: ListTile(
-        leading: Container(
-          width: 40,
-          height: 40,
-          decoration: const BoxDecoration(
-            color: AppColors.orangeLight,
-            shape: BoxShape.circle,
+        clipBehavior: Clip.antiAlias,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(14),
+          side: const BorderSide(color: AppColors.line),
+        ),
+        child: ListTile(
+          leading: Container(
+            width: 40,
+            height: 40,
+            decoration: const BoxDecoration(
+              color: AppColors.orangeLight,
+              shape: BoxShape.circle,
+            ),
+            child: Icon(icon, color: AppColors.orange, size: 20),
           ),
-          child: Icon(icon, color: AppColors.orange, size: 20),
-        ),
-        title: Text(
-          title,
-          style: const TextStyle(
-            fontSize: 14,
-            fontWeight: FontWeight.w600,
-            color: AppColors.ink,
+          title: Text(
+            title,
+            style: const TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.w600,
+              color: AppColors.ink,
+            ),
           ),
+          subtitle: Text(
+            subtitle,
+            style: const TextStyle(fontSize: 12, color: AppColors.muted),
+          ),
+          trailing: const Icon(
+            Icons.chevron_right_rounded,
+            color: AppColors.muted,
+          ),
+          onTap: onTap,
         ),
-        subtitle: Text(
-          subtitle,
-          style: const TextStyle(fontSize: 12, color: AppColors.muted),
-        ),
-        trailing: const Icon(
-          Icons.chevron_right_rounded,
-          color: AppColors.muted,
-        ),
-        onTap: onTap,
       ),
     );
   }
