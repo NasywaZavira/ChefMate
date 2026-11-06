@@ -1,6 +1,5 @@
 import 'package:flutter/foundation.dart';
 
-
 import '../models/meal_plan_entry.dart';
 import '../models/shopping_item.dart';
 
@@ -43,22 +42,16 @@ class AppState extends ChangeNotifier {
     notifyListeners();
   }
 
-  //  Pengaturan notifikasi 
+  //  Pengaturan notifikasi
 
   bool notifyReminder = true;
-  bool notifyPromo = false;
 
   void setNotifyReminder(bool value) {
     notifyReminder = value;
     notifyListeners();
   }
 
-  void setNotifyPromo(bool value) {
-    notifyPromo = value;
-    notifyListeners();
-  }
-
-  //  Resep favorit (bookmark), relasi Set<recipeId> 
+  //  Resep favorit (bookmark), relasi Set<recipeId>
 
   final Set<String> _bookmarkedRecipeIds = {};
 
@@ -73,7 +66,7 @@ class AppState extends ChangeNotifier {
     notifyListeners();
   }
 
-  //  Meal Plan CRUD (relasi ID ke Recipe lewat recipeId) 
+  //  Meal Plan CRUD (relasi ID ke Recipe lewat recipeId)
 
   List<MealPlanEntry> mealsForDate(String date) =>
       _mealPlan.where((e) => e.date == date).toList();
@@ -106,7 +99,7 @@ class AppState extends ChangeNotifier {
     notifyListeners();
   }
 
-  //  Shopping List CRUD 
+  //  Shopping List CRUD
 
   ShoppingItem addShoppingItem({
     required String name,
@@ -142,27 +135,77 @@ class AppState extends ChangeNotifier {
     notifyListeners();
   }
 
-  //  Data simulasi awal 
+  //  Data simulasi awal
 
   void _seed() {
     _mealPlan.addAll([
-      MealPlanEntry(id: _nextId('mp'), date: '2026-09-10', mealType: 'Sarapan', recipeId: 'nasi-goreng-spesial'),
-      MealPlanEntry(id: _nextId('mp'), date: '2026-09-10', mealType: 'Makan Siang', recipeId: 'soto-ayam-bening'),
-      MealPlanEntry(id: _nextId('mp'), date: '2026-09-08', mealType: 'Makan Malam', recipeId: 'ayam-teriyaki'),
-      MealPlanEntry(id: _nextId('mp'), date: '2026-09-09', mealType: 'Sarapan', recipeId: 'sup-jagung'),
-      MealPlanEntry(id: _nextId('mp'), date: '2026-09-15', mealType: 'Makan Malam', recipeId: 'rendang-daging'),
-      MealPlanEntry(id: _nextId('mp'), date: '2026-09-22', mealType: 'Makan Siang', recipeId: 'gado-gado'),
+      MealPlanEntry(
+        id: _nextId('mp'),
+        date: '2026-09-10',
+        mealType: 'Sarapan',
+        recipeId: 'nasi-goreng-spesial',
+      ),
+      MealPlanEntry(
+        id: _nextId('mp'),
+        date: '2026-09-10',
+        mealType: 'Makan Siang',
+        recipeId: 'soto-ayam-bening',
+      ),
+      MealPlanEntry(
+        id: _nextId('mp'),
+        date: '2026-09-08',
+        mealType: 'Makan Malam',
+        recipeId: 'ayam-teriyaki',
+      ),
+      MealPlanEntry(
+        id: _nextId('mp'),
+        date: '2026-09-09',
+        mealType: 'Sarapan',
+        recipeId: 'sup-jagung',
+      ),
+      MealPlanEntry(
+        id: _nextId('mp'),
+        date: '2026-09-15',
+        mealType: 'Makan Malam',
+        recipeId: 'rendang-daging',
+      ),
+      MealPlanEntry(
+        id: _nextId('mp'),
+        date: '2026-09-22',
+        mealType: 'Makan Siang',
+        recipeId: 'gado-gado',
+      ),
     ]);
 
     _shoppingItems.addAll([
-      ShoppingItem(id: _nextId('sl'), name: 'Daun jeruk', amount: '3 lembar', sourceRecipeId: 'ayam-teriyaki'),
-      ShoppingItem(id: _nextId('sl'), name: 'Santan kental', amount: '200 ml', sourceRecipeId: 'rendang-daging'),
+      ShoppingItem(
+        id: _nextId('sl'),
+        name: 'Daun jeruk',
+        amount: '3 lembar',
+        sourceRecipeId: 'ayam-teriyaki',
+      ),
+      ShoppingItem(
+        id: _nextId('sl'),
+        name: 'Santan kental',
+        amount: '200 ml',
+        sourceRecipeId: 'rendang-daging',
+      ),
       ShoppingItem(id: _nextId('sl'), name: 'Kentang', amount: '3 buah'),
-      ShoppingItem(id: _nextId('sl'), name: 'Ayam fillet', amount: '250 g', checked: true, sourceRecipeId: 'soto-ayam-bening'),
-      ShoppingItem(id: _nextId('sl'), name: 'Kunyit', amount: '2 ruas', checked: true),
+      ShoppingItem(
+        id: _nextId('sl'),
+        name: 'Ayam fillet',
+        amount: '250 g',
+        checked: true,
+        sourceRecipeId: 'soto-ayam-bening',
+      ),
+      ShoppingItem(
+        id: _nextId('sl'),
+        name: 'Kunyit',
+        amount: '2 ruas',
+        checked: true,
+      ),
     ]);
   }
 }
-
 
 final appState = AppState();
