@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:image_picker/image_picker.dart';
 
 import '../state/app_state.dart';
 import '../theme/app_theme.dart';
@@ -14,15 +16,26 @@ class ProfileScreen extends StatefulWidget {
 class _ProfileScreenState extends State<ProfileScreen> {
   late final _nameController = TextEditingController(text: appState.userName);
   late final _emailController = TextEditingController(text: appState.userEmail);
-  late final _budgetController = TextEditingController(text: appState.dailyBudget);
+  late final _budgetController = TextEditingController(
+    text: appState.dailyBudget,
+  );
 
   late String _diet = appState.dietPreference;
   late bool _spicy = appState.likesSpicy;
+  Uint8List? _profileImageBytes;
   bool _saved = false;
   String? _nameError;
   String? _emailError;
 
   static const diets = ['Halal', 'Vegetarian', 'Vegan', 'Tanpa pantangan'];
+
+  @override
+  void dispose() {
+    _nameController.dispose();
+    _emailController.dispose();
+    _budgetController.dispose();
+    super.dispose();
+  }
 
   void _save() {
     final email = _emailController.text.trim();
@@ -64,6 +77,26 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
+  Future<void> _changeProfilePicture() async {
+    try {
+      final image = await ImagePicker().pickImage(source: ImageSource.gallery);
+      if (image == null) return;
+
+      final imageBytes = await image.readAsBytes();
+      if (!mounted) return;
+      setState(() => _profileImageBytes = imageBytes);
+    } on PlatformException catch (error) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            error.message ?? 'Foto profil tidak dapat dipilih. Coba lagi.',
+          ),
+        ),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -71,38 +104,58 @@ class _ProfileScreenState extends State<ProfileScreen> {
       body: ListView(
         padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
         children: [
-          Row(
-            children: [
-              Container(
-                width: 56,
-                height: 56,
-                decoration: const BoxDecoration(
-                  color: AppColors.orangeLight,
-                  shape: BoxShape.circle,
+          Text(
+            'Profil & Preferensi',
+            style: Theme.of(context).textTheme.headlineMedium
+                ?.copyWith(fontSize: 18),
+          ),
+          const SizedBox(height: 2),
+          const Text(
+            'Data ini dipakai chatbot & filter resep',
+            style: TextStyle(fontSize: 12, color: AppColors.muted),
+          ),
+          const SizedBox(height: 20),
+          Center(
+            child: Stack(
+              clipBehavior: Clip.none,
+              children: [
+                Container(
+                  key: const Key('profile-picture'),
+                  width: 144,
+                  height: 144,
+                  decoration: const BoxDecoration(
+                    color: AppColors.orangeLight,
+                    shape: BoxShape.circle,
+                  ),
+                  child: ClipOval(
+                    child: _profileImageBytes == null
+                        ? Image.asset(
+                            'assets/images/profile.jpg',
+                            fit: BoxFit.cover,
+                          )
+                        : Image.memory(_profileImageBytes!, fit: BoxFit.cover),
+                  ),
                 ),
-                child: ClipOval(
-                  child: Image.asset('assets/images/profile.jpg', fit: BoxFit.cover),
-                ),
-              ),
-              const SizedBox(width: 14),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Profil & Preferensi',
-                      style: Theme.of(context).textTheme.headlineMedium
-                          ?.copyWith(fontSize: 18),
+                Positioned(
+                  right: -2,
+                  bottom: 4,
+                  child: Material(
+                    color: AppColors.orange,
+                    shape: const CircleBorder(),
+                    child: IconButton(
+                      key: const Key('change-profile-picture'),
+                      tooltip: 'Ubah foto profil',
+                      onPressed: _changeProfilePicture,
+                      icon: const Icon(
+                        Icons.camera_alt_rounded,
+                        color: Colors.white,
+                        size: 20,
+                      ),
                     ),
-                    const SizedBox(height: 2),
-                    const Text(
-                      'Data ini dipakai chatbot & filter resep',
-                      style: TextStyle(fontSize: 12, color: AppColors.muted),
-                    ),
-                  ],
+                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
           const SizedBox(height: 24),
 
