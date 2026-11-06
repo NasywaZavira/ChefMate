@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../theme/app_theme.dart';
-import 'login_screen.dart';
-import 'register_screen.dart';
+import 'auth_screen.dart';
 
 class LandingPage extends StatelessWidget {
   const LandingPage({super.key});
@@ -28,7 +27,7 @@ class LandingPage extends StatelessWidget {
               const SizedBox(height: 12),
               Text(
                 'Rencanakan meal plan mingguan, temukan resep sesuai bahan '
-                    'yang kamu punya, dan biarkan daftar belanja tersusun sendiri.',
+                'yang kamu punya, dan biarkan daftar belanja tersusun sendiri.',
                 style: textTheme.bodyLarge?.copyWith(color: AppColors.muted),
               ),
               const Spacer(),
@@ -49,17 +48,19 @@ class LandingPage extends StatelessWidget {
               const SizedBox(height: 32),
               ElevatedButton(
                 onPressed: () {
-                  Navigator.of(context).push(
-                    MaterialPageRoute(builder: (_) => const RegisterScreen()),
-                  );
+                  Navigator.of(
+                    context,
+                  ).push(MaterialPageRoute(builder: (_) => const AuthScreen()));
                 },
-                child: const Text('Mulai'),
+                child: const Text('Daftar'),
               ),
               const SizedBox(height: 12),
               OutlinedButton(
                 onPressed: () {
                   Navigator.of(context).push(
-                    MaterialPageRoute(builder: (_) => const LoginScreen()),
+                    MaterialPageRoute(
+                      builder: (_) => const AuthScreen(startInSignUp: false),
+                    ),
                   );
                 },
                 child: const Text('Sudah punya akun? Masuk'),
@@ -118,9 +119,7 @@ class _FeatureRow extends StatelessWidget {
         Expanded(
           child: Text(
             label,
-            style: Theme.of(context)
-                .textTheme
-                .bodyLarge
+            style: Theme.of(context).textTheme.bodyLarge
                 ?.copyWith(color: AppColors.ink),
           ),
         ),
