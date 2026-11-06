@@ -4,20 +4,8 @@ import '../data/recipe_data.dart';
 import '../models/meal_plan_entry.dart';
 import '../state/app_state.dart';
 import '../theme/app_theme.dart';
+import '../widgets/recipe_image.dart';
 import 'meal_plan_form_screen.dart';
-
-const Map<String, String> _imageAliases = {
-  'tumis_kangkung': 'tumis_kankung',
-};
-
-String _recipeImagePath(String title) {
-  final slug = title
-      .toLowerCase()
-      .replaceAll(RegExp(r'[^a-z0-9]+'), '_')
-      .replaceAll(RegExp(r'^_+|_+$'), '');
-  final file = _imageAliases[slug] ?? slug;
-  return 'assets/images/$file.jpg';
-}
 
 class CalendarScreen extends StatefulWidget {
   const CalendarScreen({super.key});
@@ -30,20 +18,30 @@ class _CalendarScreenState extends State<CalendarScreen> {
   int _selectedDate = 10;
   static const _month = '2026-09';
 
-  String get _selectedDateKey => '$_month-${_selectedDate.toString().padLeft(2, '0')}';
+  String get _selectedDateKey =>
+      '$_month-${_selectedDate.toString().padLeft(2, '0')}';
 
   @override
   Widget build(BuildContext context) {
     const weekDays = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
-    final daysWithPlan = appState.mealPlan.map((e) => int.parse(e.date.split('-').last)).toSet();
+    final daysWithPlan = appState.mealPlan
+        .map((e) => int.parse(e.date.split('-').last))
+        .toSet();
     final todaysMeals = appState.mealsForDate(_selectedDateKey);
 
     return ListView(
       padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
       children: [
-        Text('Calendar', style: Theme.of(context).textTheme.displayLarge?.copyWith(fontSize: 22)),
+        Text(
+          'Calendar',
+          style: Theme.of(context).textTheme.displayLarge
+              ?.copyWith(fontSize: 22),
+        ),
         const SizedBox(height: 4),
-        const Text('September 2026', style: TextStyle(fontSize: 13, color: AppColors.muted)),
+        const Text(
+          'September 2026',
+          style: TextStyle(fontSize: 13, color: AppColors.muted),
+        ),
         const SizedBox(height: 14),
         Container(
           padding: const EdgeInsets.all(12),
@@ -56,12 +54,20 @@ class _CalendarScreenState extends State<CalendarScreen> {
             children: [
               Row(
                 children: weekDays
-                    .map((d) => Expanded(
-                  child: Center(
-                    child: Text(d,
-                        style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: AppColors.muted)),
-                  ),
-                ))
+                    .map(
+                      (d) => Expanded(
+                        child: Center(
+                          child: Text(
+                            d,
+                            style: const TextStyle(
+                              fontSize: 11,
+                              fontWeight: FontWeight.w600,
+                              color: AppColors.muted,
+                            ),
+                          ),
+                        ),
+                      ),
+                    )
                     .toList(),
               ),
               const SizedBox(height: 8),
@@ -90,19 +96,25 @@ class _CalendarScreenState extends State<CalendarScreen> {
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          Text('$date',
-                              style: TextStyle(
-                                fontSize: 12,
-                                fontWeight: selected ? FontWeight.w600 : FontWeight.w400,
-                                color: selected ? Colors.white : AppColors.ink,
-                              )),
+                          Text(
+                            '$date',
+                            style: TextStyle(
+                              fontSize: 12,
+                              fontWeight: selected
+                                  ? FontWeight.w600
+                                  : FontWeight.w400,
+                              color: selected ? Colors.white : AppColors.ink,
+                            ),
+                          ),
                           const SizedBox(height: 2),
                           Container(
                             width: 4,
                             height: 4,
                             decoration: BoxDecoration(
                               shape: BoxShape.circle,
-                              color: hasPlan ? (selected ? Colors.white : AppColors.orange) : Colors.transparent,
+                              color: hasPlan
+                                  ? (selected ? Colors.white : AppColors.orange)
+                                  : Colors.transparent,
                             ),
                           ),
                         ],
@@ -115,36 +127,48 @@ class _CalendarScreenState extends State<CalendarScreen> {
           ),
         ),
         const SizedBox(height: 20),
-        Text('Rencana $_selectedDate September',
-            style: Theme.of(context).textTheme.headlineMedium?.copyWith(fontSize: 15)),
+        Text(
+          'Rencana $_selectedDate September',
+          style: Theme.of(context).textTheme.headlineMedium
+              ?.copyWith(fontSize: 15),
+        ),
         const SizedBox(height: 10),
         if (todaysMeals.isEmpty)
           const Padding(
             padding: EdgeInsets.symmetric(vertical: 6),
-            child: Text('Belum ada rencana di tanggal ini.',
-                style: TextStyle(fontSize: 13, color: AppColors.muted)),
+            child: Text(
+              'Belum ada rencana di tanggal ini.',
+              style: TextStyle(fontSize: 13, color: AppColors.muted),
+            ),
           )
         else
-          ...todaysMeals.map((entry) => Padding(
-            padding: const EdgeInsets.only(bottom: 8),
-            child: _PlannedMealRow(
-              entry: entry,
-              onTap: () async {
-                await Navigator.of(context).push(
-                  MaterialPageRoute(
-                    builder: (_) => MealPlanFormScreen(date: _selectedDateKey, existingEntry: entry),
-                  ),
-                );
-                setState(() {});
-              },
+          ...todaysMeals.map(
+            (entry) => Padding(
+              padding: const EdgeInsets.only(bottom: 8),
+              child: _PlannedMealRow(
+                entry: entry,
+                onTap: () async {
+                  await Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (_) => MealPlanFormScreen(
+                        date: _selectedDateKey,
+                        existingEntry: entry,
+                      ),
+                    ),
+                  );
+                  setState(() {});
+                },
+              ),
             ),
-          )),
+          ),
         const SizedBox(height: 4),
         InkWell(
           borderRadius: BorderRadius.circular(14),
           onTap: () async {
             await Navigator.of(context).push(
-              MaterialPageRoute(builder: (_) => MealPlanFormScreen(date: _selectedDateKey)),
+              MaterialPageRoute(
+                builder: (_) => MealPlanFormScreen(date: _selectedDateKey),
+              ),
             );
             setState(() {});
           },
@@ -155,7 +179,10 @@ class _CalendarScreenState extends State<CalendarScreen> {
               borderRadius: BorderRadius.circular(14),
             ),
             child: const Center(
-              child: Text('+ Tambah rencana makan', style: TextStyle(fontSize: 13, color: AppColors.muted)),
+              child: Text(
+                '+ Tambah rencana makan',
+                style: TextStyle(fontSize: 13, color: AppColors.muted),
+              ),
             ),
           ),
         ),
@@ -173,7 +200,7 @@ class _PlannedMealRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final recipe = dummyRecipes.firstWhere(
-          (r) => r.id == entry.recipeId,
+      (r) => r.id == entry.recipeId,
       orElse: () => dummyRecipes.first,
     );
 
@@ -191,13 +218,12 @@ class _PlannedMealRow extends StatelessWidget {
           children: [
             ClipRRect(
               borderRadius: BorderRadius.circular(10),
-              child: Image.asset(
-                _recipeImagePath(recipe.title),
+              child: RecipeImage(
+                recipeTitle: recipe.title,
                 width: 40,
                 height: 40,
                 fit: BoxFit.cover,
-                errorBuilder: (context, error, stackTrace) =>
-                    Container(width: 40, height: 40, color: AppColors.orangeLight),
+                showPlaceholderIcon: false,
               ),
             ),
             const SizedBox(width: 12),
@@ -205,11 +231,20 @@ class _PlannedMealRow extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(entry.mealType,
-                      style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: AppColors.orange)),
+                  Text(
+                    entry.mealType,
+                    style: const TextStyle(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w600,
+                      color: AppColors.orange,
+                    ),
+                  ),
                   const SizedBox(height: 2),
-                  Text(recipe.title,
-                      style: Theme.of(context).textTheme.bodyLarge?.copyWith(fontWeight: FontWeight.w500)),
+                  Text(
+                    recipe.title,
+                    style: Theme.of(context).textTheme.bodyLarge
+                        ?.copyWith(fontWeight: FontWeight.w500),
+                  ),
                 ],
               ),
             ),
