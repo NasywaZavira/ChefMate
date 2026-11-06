@@ -5,6 +5,7 @@ import 'calendar_screen.dart';
 import 'home_screen.dart';
 import 'profile_screen.dart';
 import 'shopping_list_screen.dart';
+import '../widgets/main_navigation_bar.dart';
 
 class MainShell extends StatefulWidget {
   const MainShell({super.key});
@@ -32,23 +33,9 @@ class _MainShellState extends State<MainShell> {
       body: SafeArea(
         child: IndexedStack(index: _index, children: screens),
       ),
-      bottomNavigationBar: BottomNavigationBar(
+      bottomNavigationBar: MainNavigationBar(
         currentIndex: _index,
         onTap: (i) => setState(() => _index = i),
-        type: BottomNavigationBarType.fixed,
-        backgroundColor: AppColors.orange,
-        selectedItemColor: Colors.white,
-        unselectedItemColor: Colors.white.withValues(alpha: 0.7),
-        showUnselectedLabels: true,
-        selectedFontSize: 11,
-        unselectedFontSize: 11,
-        elevation: 0,
-        items: const [
-          BottomNavigationBarItem(icon: Icon(Icons.home_rounded), label: 'Beranda'),
-          BottomNavigationBarItem(icon: Icon(Icons.calendar_month_rounded), label: 'Kalender'),
-          BottomNavigationBarItem(icon: Icon(Icons.shopping_bag_rounded), label: 'Daftar Belanja'),
-          BottomNavigationBarItem(icon: Icon(Icons.person_rounded), label: 'Profile'),
-        ],
       ),
     );
   }
