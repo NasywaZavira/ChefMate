@@ -1,5 +1,7 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
+import '../services/auth_service.dart';
 import '../state/app_state.dart';
 import '../theme/app_theme.dart';
 import 'main_shell.dart';
@@ -18,8 +20,10 @@ class _AuthScreenState extends State<AuthScreen> {
   final _nameController = TextEditingController();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
+  final _authService = AuthService();
   late bool _isSignUp = widget.startInSignUp;
   bool _obscurePassword = true;
+  bool _isLoading = false;
 
   @override
   void dispose() {
@@ -29,21 +33,53 @@ class _AuthScreenState extends State<AuthScreen> {
     super.dispose();
   }
 
-  void _continue() {
+  Future<void> _continue() async {
+    if (_isLoading) return;
     if (!_formKey.currentState!.validate()) return;
 
-    appState.updateProfile(
-      name: _isSignUp ? _nameController.text.trim() : appState.userName,
-      email: _emailController.text.trim(),
-      diet: appState.dietPreference,
-      budget: appState.dailyBudget,
-      spicy: appState.likesSpicy,
-    );
+    setState(() => _isLoading = true);
 
-    Navigator.of(context).pushAndRemoveUntil(
-      MaterialPageRoute(builder: (_) => const MainShell()),
-      (route) => false,
-    );
+    try {
+      final email = _emailController.text.trim();
+      final user = _isSignUp
+          ? await _authService.signUp(
+              name: _nameController.text.trim(),
+              email: email,
+              password: _passwordController.text,
+            )
+          : await _authService.signIn(
+              email: email,
+              password: _passwordController.text,
+            );
+      final userEmail = user.email ?? email;
+      final displayName = user.displayName?.trim();
+      appState.updateProfile(
+        name: displayName == null || displayName.isEmpty
+            ? userEmail.split('@').first
+            : displayName,
+        email: userEmail,
+        diet: appState.dietPreference,
+        budget: appState.dailyBudget,
+        spicy: appState.likesSpicy,
+      );
+
+      if (!mounted) return;
+      Navigator.of(context).pushAndRemoveUntil(
+        MaterialPageRoute(builder: (_) => const MainShell()),
+        (route) => false,
+      );
+    } on FirebaseAuthException catch (error) {
+      if (mounted) _showAuthError(authErrorMessage(error));
+    } on StateError catch (error) {
+      if (mounted) _showAuthError(error.message);
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
+  }
+
+  void _showAuthError(String message) {
+    ScaffoldMessenger.of(context)
+        .showSnackBar(SnackBar(content: Text(message)));
   }
 
   @override
@@ -97,13 +133,16 @@ class _AuthScreenState extends State<AuthScreen> {
                     const SizedBox(height: 24),
                     _AuthModeSelector(
                       isSignUp: _isSignUp,
-                      onChanged: (value) => setState(() => _isSignUp = value),
+                      onChanged: (value) {
+                        if (!_isLoading) setState(() => _isSignUp = value);
+                      },
                     ),
                     const SizedBox(height: 22),
                     if (_isSignUp) ...[
                       TextFormField(
                         key: const Key('auth-name'),
                         controller: _nameController,
+                        enabled: !_isLoading,
                         textCapitalization: TextCapitalization.words,
                         textInputAction: TextInputAction.next,
                         decoration: const InputDecoration(
@@ -120,6 +159,7 @@ class _AuthScreenState extends State<AuthScreen> {
                     TextFormField(
                       key: const Key('auth-email'),
                       controller: _emailController,
+                      enabled: !_isLoading,
                       keyboardType: TextInputType.emailAddress,
                       textInputAction: TextInputAction.next,
                       autocorrect: false,
@@ -141,6 +181,7 @@ class _AuthScreenState extends State<AuthScreen> {
                     TextFormField(
                       key: const Key('auth-password'),
                       controller: _passwordController,
+                      enabled: !_isLoading,
                       obscureText: _obscurePassword,
                       textInputAction: TextInputAction.done,
                       onFieldSubmitted: (_) => _continue(),
@@ -164,20 +205,26 @@ class _AuthScreenState extends State<AuthScreen> {
                       validator: (value) {
                         final password = value ?? '';
                         if (password.isEmpty) return 'Kata sandi wajib diisi.';
-                        if (password.length < 8) {
-                          return 'Kata sandi minimal 8 karakter.';
+                        if (_isSignUp && password.length < 6) {
+                          return 'Kata sandi minimal 6 karakter.';
                         }
                         return null;
                       },
                     ),
                     const SizedBox(height: 24),
                     ElevatedButton(
-                      onPressed: _continue,
-                      child: Text(_isSignUp ? 'Daftar' : 'Masuk'),
+                      onPressed: _isLoading ? null : _continue,
+                      child: _isLoading
+                          ? const SizedBox(
+                              height: 20,
+                              width: 20,
+                              child: CircularProgressIndicator(strokeWidth: 2),
+                            )
+                          : Text(_isSignUp ? 'Daftar' : 'Masuk'),
                     ),
                     const SizedBox(height: 16),
                     const Text(
-                      'Versi demo: akun tidak disimpan dan kata sandi tidak diverifikasi.',
+                      'Akunmu diamankan dengan Firebase Authentication.',
                       textAlign: TextAlign.center,
                       style: TextStyle(fontSize: 12, color: AppColors.muted),
                     ),

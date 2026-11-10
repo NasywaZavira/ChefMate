@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 
+import 'package:firebase_auth/firebase_auth.dart';
+
+import '../services/auth_service.dart';
 import '../state/app_state.dart';
 import '../theme/app_theme.dart';
 import 'landing_page.dart';
@@ -12,6 +15,8 @@ class SettingsScreen extends StatefulWidget {
 }
 
 class _SettingsScreenState extends State<SettingsScreen> {
+  bool _isSigningOut = false;
+
   void _showInfoDialog(String title, String message) {
     showDialog<void>(
       context: context,
@@ -55,11 +60,22 @@ class _SettingsScreenState extends State<SettingsScreen> {
       ),
     );
 
-    if (confirmed == true && mounted) {
+    if (confirmed != true || !mounted || _isSigningOut) return;
+
+    setState(() => _isSigningOut = true);
+    try {
+      await AuthService().signOut();
+      if (!mounted) return;
       Navigator.of(context).pushAndRemoveUntil(
         MaterialPageRoute(builder: (_) => const LandingPage()),
         (route) => false,
       );
+    } on FirebaseAuthException catch (error) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text(authErrorMessage(error))));
+    } finally {
+      if (mounted) setState(() => _isSigningOut = false);
     }
   }
 
@@ -110,7 +126,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
               icon: Icons.logout_rounded,
               title: 'Keluar',
               subtitle: 'Logout dari akun saat ini',
-              onTap: _confirmLogout,
+              onTap: _isSigningOut
+                  ? null
+                  : () {
+                      _confirmLogout();
+                    },
             ),
           ],
         ),
@@ -152,7 +172,7 @@ class _SettingsTile extends StatelessWidget {
   final IconData icon;
   final String title;
   final String subtitle;
-  final VoidCallback onTap;
+  final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {

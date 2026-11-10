@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
 
+import '../services/auth_service.dart';
+import '../state/app_state.dart';
 import '../theme/app_theme.dart';
 import 'landing_page.dart';
+import 'main_shell.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -35,11 +38,28 @@ class _SplashScreenState extends State<SplashScreen>
 
     Future.delayed(const Duration(milliseconds: 1800), () {
       if (!mounted) return;
+      final user = AuthService().currentUser;
+      final destination = user == null
+          ? const LandingPage()
+          : const MainShell();
+      if (user != null) {
+        final email = user.email ?? appState.userEmail;
+        final displayName = user.displayName?.trim();
+        appState.updateProfile(
+          name: displayName == null || displayName.isEmpty
+              ? email.split('@').first
+              : displayName,
+          email: email,
+          diet: appState.dietPreference,
+          budget: appState.dailyBudget,
+          spicy: appState.likesSpicy,
+        );
+      }
       Navigator.of(context).pushReplacement(
         PageRouteBuilder(
           transitionDuration: const Duration(milliseconds: 500),
           pageBuilder: (_, animation, _) =>
-              FadeTransition(opacity: animation, child: const LandingPage()),
+              FadeTransition(opacity: animation, child: destination),
         ),
       );
     });
