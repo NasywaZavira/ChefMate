@@ -50,3 +50,10 @@ app.*.map.json
 node_modules
 
 google-services.json
+
+.env
+*.jks
+*.keystore
+key.properties
+*-adminsdk-*.json
+serviceAccountKey.json
