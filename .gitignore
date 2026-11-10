@@ -48,3 +48,5 @@ app.*.map.json
 .widget_preview/
 
 node_modules
+
+google-services.json
