@@ -57,3 +57,5 @@ google-services.json
 key.properties
 *-adminsdk-*.json
 serviceAccountKey.json
+
+firebase_options.dart
