@@ -1,8 +1,8 @@
 # ChefMate
 
 Aplikasi mobile resep & rencana makan — Tugas Akhir Mata Kuliah Pemrograman
-Mobile (ILK3105). Dibangun dengan Flutter, state di memori (tanpa backend),
-lewat lapisan repository simulasi untuk alur loading/gagal.
+Mobile (ILK3105). Dibangun dengan Flutter. Data resep, kalender, dan daftar
+belanja menggunakan state di memori; chatbot memakai Gemini Developer API.
 
 ## Fitur utama
 
@@ -10,7 +10,7 @@ lewat lapisan repository simulasi untuk alur loading/gagal.
 - **Kalender** — rencana makan per tanggal, modul CRUD dengan relasi ke resep.
 - **Daftar Belanja** — modul CRUD kedua, tandai dibeli, bagikan lewat clipboard.
 - **Detail Resep** — bahan, alat, langkah, bookmark resep favorit.
-- **Chatbot** — asisten tanya-jawab seputar bahan/resep (rule-based).
+- **Chatbot** — asisten AI tanya-jawab seputar bahan/resep.
 - **Profil & Pengaturan** — preferensi diet, anggaran, notifikasi.
 
 ## Cara menjalankan
@@ -29,7 +29,12 @@ lewat lapisan repository simulasi untuk alur loading/gagal.
    ```bash
    flutter run
    ```
-5. (Opsional) jalankan test:
+5. Salin `gemini.env.json.example` menjadi `gemini.env.json`, lalu isi dengan
+   API key dari Google AI Studio. Jalankan aplikasi dengan:
+   ```bash
+   flutter run --dart-define-from-file=gemini.env.json
+   ```
+6. (Opsional) jalankan test:
    ```bash
    flutter test
    ```
@@ -47,9 +52,13 @@ lib/
 
 ## Catatan data simulasi
 
-Tidak ada backend/API sungguhan. Semua data (`AppState`) hidup di memori dan
-reset setiap aplikasi dijalankan ulang. Operasi simpan/hapus di modul
+Data aplikasi (`AppState`) hidup di memori dan reset setiap aplikasi
+dijalankan ulang. Operasi simpan/hapus di modul
 Kalender dan Daftar Belanja lewat `AppRepository`
 (`lib/data/app_repository.dart`), yang menambahkan jeda ~700ms dan opsi
 `simulateError` untuk menguji skenario loading/gagal/coba-lagi — ada toggle
 "Simulasikan gagal (untuk demo/uji)" di masing-masing form untuk memicunya.
+
+`gemini.env.json` berisi API key dan sengaja tidak dilacak Git. API key yang
+dimasukkan ke aplikasi Flutter tetap dapat diekstrak dari aplikasi yang
+didistribusikan; gunakan backend proxy untuk aplikasi production.
