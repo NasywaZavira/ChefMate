@@ -52,6 +52,7 @@ node_modules
 google-services.json
 
 .env
+gemini.env.json
 *.jks
 *.keystore
 key.properties
