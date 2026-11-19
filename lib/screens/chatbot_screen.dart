@@ -1,5 +1,7 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
+import '../services/ai_service.dart';
 import '../theme/app_theme.dart';
 
 class ChatbotScreen extends StatefulWidget {
@@ -12,36 +14,100 @@ class ChatbotScreen extends StatefulWidget {
 class _ChatbotScreenState extends State<ChatbotScreen> {
   final TextEditingController _textController = TextEditingController();
   final ScrollController _scrollController = ScrollController();
+  final AiService _aiService = AiService();
 
   final List<_ChatMessage> _messages = [
     const _ChatMessage(
       isUser: false,
       text: 'Halo! Ada bahan apa di dapurmu hari ini? Aku bisa saranin resep atau penggantinya.',
     ),
-    const _ChatMessage(
-      isUser: true,
-      text: 'Aku ada ayam, tapi enggak ada daun jeruk',
-    ),
-    const _ChatMessage(
-      isUser: false,
-      text: 'Daun jeruk bisa diganti kulit jeruk nipis parut, atau dilewati saja — rasanya tetap gurih dari bumbu lain.',
-    ),
   ];
 
-  bool get _canSend => _textController.text.trim().isNotEmpty;
+  bool _isLoading = false;
 
-  void _sendMessage([String? overrideText]) {
-    final text = (overrideText ?? _textController.text).trim();
-    if (text.isEmpty) {
+  bool get _canSend => !_isLoading && _textController.text.trim().isNotEmpty;
+
+  Future<void> _sendMessage() async {
+    final text = _textController.text.trim();
+    if (text.isEmpty || _isLoading) {
       return;
     }
 
     setState(() {
       _messages.add(_ChatMessage(isUser: true, text: text));
-      _messages.add(_ChatMessage(isUser: false, text: _buildReply(text)));
+      _isLoading = true;
       _textController.clear();
     });
+    _scrollToBottom();
 
+    try {
+      final response = await _aiService.ask(text);
+      if (!mounted) return;
+      setState(() {
+        _messages.add(
+          _ChatMessage(isUser: false, text: _formatResponse(response)),
+        );
+      });
+    } catch (error, stackTrace) {
+      FlutterError.reportError(
+        FlutterErrorDetails(
+          exception: error,
+          stack: stackTrace,
+          library: 'ChefMate chatbot',
+          context: ErrorDescription('while requesting an AI response'),
+        ),
+      );
+      if (!mounted) return;
+      setState(() {
+        _messages.add(
+          _ChatMessage(
+            isUser: false,
+            text: kDebugMode
+                ? error.toString()
+                : 'Maaf, jawaban belum bisa dimuat. Coba lagi sebentar.',
+          ),
+        );
+      });
+    } finally {
+      if (mounted) {
+        setState(() => _isLoading = false);
+        _scrollToBottom();
+      }
+    }
+  }
+  String _formatResponse(Map<String, dynamic> response) {
+    final reply = response['reply'] as String;
+    final recipe = response['recipe'];
+    if (recipe is! Map<String, dynamic>) return reply;
+
+    final details = <String>[];
+    final name = recipe['name'];
+    if (name is String && name.isNotEmpty) {
+      details.add(name);
+    }
+
+    final ingredients = recipe['ingredients'];
+    if (ingredients is List) {
+      final items = ingredients.whereType<String>().toList();
+      if (items.isNotEmpty) {
+        details.add('Bahan:\n${items.map((item) => '• $item').join('\n')}');
+      }
+    }
+
+    final steps = recipe['steps'];
+    if (steps is List) {
+      final items = steps.whereType<String>().toList();
+      if (items.isNotEmpty) {
+        details.add(
+          'Langkah:\n${items.asMap().entries.map((entry) => '${entry.key + 1}. ${entry.value}').join('\n')}',
+        );
+      }
+    }
+
+    return details.isEmpty ? reply : '$reply\n\n${details.join('\n\n')}';
+  }
+
+  void _scrollToBottom() {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (_scrollController.hasClients) {
         _scrollController.animateTo(
@@ -51,25 +117,6 @@ class _ChatbotScreenState extends State<ChatbotScreen> {
         );
       }
     });
-  }
-
-  String _buildReply(String input) {
-    final lower = input.toLowerCase();
-
-    if (lower.contains('ayam')) {
-      return 'Ayam bisa dibuat sambal kecap, ayam rica-rica, atau ayam panggang dengan bumbu sederhana. Mau aku kasih resep yang cepat?';
-    }
-    if (lower.contains('vegetarian') || lower.contains('tanpa daging')) {
-      return 'Coba bikin tumis sayur, tahu tempe bumbu kecap, atau mie goreng sayur yang gampang dan sehat.';
-    }
-    if (lower.contains('rendah karbohidrat') || lower.contains('diet')) {
-      return 'Untuk versi rendah karbohidrat, pilih sayur, protein, dan hindari nasi/mi berlebih. Aku bisa bantu bikin menu yang pas.';
-    }
-    if (lower.contains('substitusi') || lower.contains('pengganti')) {
-      return 'Bisa diganti dengan bahan yang punya rasa mirip, seperti daun salam, lemon, atau bumbu aromatik lain sesuai resepnya.';
-    }
-
-    return 'Coba buat menu yang sederhana dan cepat: pilih protein utama, tambahkan sayur, lalu sesuaikan rasa dengan garam, bawang, dan cabai. Mau aku bantu pilihkan resep?';
   }
 
   @override
@@ -116,25 +163,12 @@ class _ChatbotScreenState extends State<ChatbotScreen> {
                         ? _UserBubble(text: message.text)
                         : _BotBubble(text: message.text),
                   ),
+                if (_isLoading)
+                  const Padding(
+                    padding: EdgeInsets.only(bottom: 10),
+                    child: _TypingIndicator(),
+                  ),
                 const SizedBox(height: 12),
-                Wrap(
-                  spacing: 8,
-                  runSpacing: 8,
-                  children: [
-                    _SuggestionChip(
-                      label: 'Resep dari ayam',
-                      onTap: () => _sendMessage('Resep dari ayam'),
-                    ),
-                    _SuggestionChip(
-                      label: 'Substitusi bahan lain',
-                      onTap: () => _sendMessage('Substitusi bahan lain'),
-                    ),
-                    _SuggestionChip(
-                      label: 'Resep rendah karbohidrat',
-                      onTap: () => _sendMessage('Resep rendah karbohidrat'),
-                    ),
-                  ],
-                ),
               ],
             ),
           ),
@@ -199,6 +233,33 @@ class _ChatbotScreenState extends State<ChatbotScreen> {
   }
 }
 
+class _TypingIndicator extends StatelessWidget {
+  const _TypingIndicator();
+
+  @override
+  Widget build(BuildContext context) {
+    return Align(
+      alignment: Alignment.centerLeft,
+      child: Container(
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(color: AppColors.line),
+        ),
+        child: const SizedBox(
+          width: 16,
+          height: 16,
+          child: CircularProgressIndicator(
+            strokeWidth: 2,
+            color: AppColors.orange,
+          ),
+        ),
+      ),
+    );
+  }
+}
+
 class _ChatMessage {
   const _ChatMessage({required this.isUser, required this.text});
 
@@ -256,35 +317,6 @@ class _UserBubble extends StatelessWidget {
             fontSize: 13,
             color: Colors.white,
             height: 1.4,
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _SuggestionChip extends StatelessWidget {
-  const _SuggestionChip({required this.label, required this.onTap});
-  final String label;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(20),
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-        decoration: BoxDecoration(
-          color: AppColors.orangeLight,
-          borderRadius: BorderRadius.circular(20),
-        ),
-        child: Text(
-          label,
-          style: const TextStyle(
-            fontSize: 12,
-            color: AppColors.orange,
-            fontWeight: FontWeight.w600,
           ),
         ),
       ),
